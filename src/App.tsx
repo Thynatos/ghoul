@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Character, GameEdition } from './types/vtm';
 import { storageService } from './services/storage';
 import { soundEngine } from './services/soundEngine';
+import { peerService } from './services/peerService';
+import { syncEngine } from './services/syncEngine';
 
 // Components
 import { Navigation } from './components/common/Navigation';
@@ -21,7 +23,13 @@ import { CoterieManagerView } from './components/coterie/CoterieManagerView';
 import { DiablerieModal } from './components/taboos/DiablerieModal';
 import { BloodBondMatrixModal } from './components/taboos/BloodBondMatrixModal';
 import { MysteryInvestigationBoard } from './components/chronicle/MysteryInvestigationBoard';
-import { StorytellerScreen } from './components/storyteller/StorytellerScreen';
+import { StorytellerCockpit } from './components/storyteller/StorytellerCockpit';
+
+// P2P Multiplayer & Broadcast Components (Sprint 2)
+import { RoomLobbyModal } from './components/network/RoomLobbyModal';
+import { SecretWhisperDrawer } from './components/network/SecretWhisperDrawer';
+import { LiveDiceBanner } from './components/broadcast/LiveDiceBanner';
+import { PlayerScreenView } from './components/broadcast/PlayerScreenView';
 
 export const App: React.FC = () => {
   const [edition, setEdition] = useState<GameEdition>(storageService.getEdition());
@@ -39,12 +47,51 @@ export const App: React.FC = () => {
   const [combatDrawerOpen, setCombatDrawerOpen] = useState(false);
   const [diablerieModalOpen, setDiablerieModalOpen] = useState(false);
   const [bloodBondModalOpen, setBloodBondModalOpen] = useState(false);
+  const [roomLobbyOpen, setRoomLobbyOpen] = useState(false);
+  const [whisperDrawerOpen, setWhisperDrawerOpen] = useState(false);
+  const [whisperRecipientId, setWhisperRecipientId] = useState<string | undefined>(undefined);
+  const [unreadWhispersCount, setUnreadWhispersCount] = useState<number>(syncEngine.getUnreadWhisperCount());
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   // Primed roll request from sheet
   const [primedRoll, setPrimedRoll] = useState<{ pool: number; label: string; hunger?: number } | null>(null);
 
   const activeCharacter = characters.find(c => c.id === activeCharacterId) || characters[0];
+
+  // Auto-detect URL view/room parameters on initial load
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const requestedView = params.get('view');
+    const requestedRoom = params.get('room');
+
+    if (requestedView === 'projector') {
+      setView('projector');
+    }
+    if (requestedRoom && !peerService.isConnected()) {
+      peerService.joinRoom(requestedRoom, 'Kindred Guest', 'player');
+    }
+  }, []);
+
+  // Listen for inbound sync events (whispers, character reconciliations)
+  useEffect(() => {
+    const unsubWhisper = syncEngine.onWhisper((whisper) => {
+      setUnreadWhispersCount(syncEngine.getUnreadWhisperCount());
+      showToast(
+        `Telepathic Whisper [${whisper.discipline || 'Auspex'}]`,
+        `${whisper.senderName}: "${whisper.text}"`,
+        'blood'
+      );
+    });
+
+    const unsubChar = syncEngine.onCharacterUpdate(() => {
+      setCharacters(storageService.getCharacters());
+    });
+
+    return () => {
+      unsubWhisper();
+      unsubChar();
+    };
+  }, []);
 
   const showToast = (title: string, description?: string, type: ToastMessage['type'] = 'info') => {
     const newToast: ToastMessage = {
@@ -179,8 +226,36 @@ export const App: React.FC = () => {
     input.click();
   };
 
+  const handleOpenProjector = () => {
+    const url = new URL(window.location.href);
+    url.searchParams.set('view', 'projector');
+    const code = peerService.getRoomCode();
+    if (code) url.searchParams.set('room', code);
+    window.open(url.toString(), '_blank');
+  };
+
+  // Dedicated Zero-Spoilers Dual-Screen Projector Route
+  if (view === 'projector') {
+    return (
+      <div className="min-h-screen bg-[#030306] text-[#e5e7eb] font-sans selection:bg-rose-950 selection:text-rose-200">
+        <LiveDiceBanner />
+        <PlayerScreenView
+          onExit={() => setView('st_screen')}
+          roomCodeFromUrl={new URLSearchParams(window.location.search).get('room') || undefined}
+        />
+        <ToastContainer
+          toasts={toasts}
+          onDismiss={id => setToasts(prev => prev.filter(t => t.id !== id))}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#050505] text-[#e5e7eb] flex flex-col font-sans selection:bg-rose-950 selection:text-rose-200">
+      {/* Cinematic Dramatic Live Dice Banner */}
+      <LiveDiceBanner />
+
       {/* Top Global Navigation */}
       <Navigation
         currentView={view}
@@ -199,6 +274,13 @@ export const App: React.FC = () => {
         onOpenCombat={() => setCombatDrawerOpen(true)}
         onOpenDiablerie={() => setDiablerieModalOpen(true)}
         onOpenBloodBond={() => setBloodBondModalOpen(true)}
+        onOpenLobby={() => setRoomLobbyOpen(true)}
+        onOpenWhispers={() => {
+          setWhisperRecipientId(undefined);
+          setWhisperDrawerOpen(true);
+        }}
+        onOpenProjector={handleOpenProjector}
+        unreadWhispersCount={unreadWhispersCount}
       />
 
       {/* Main View Router */}
@@ -264,7 +346,7 @@ export const App: React.FC = () => {
         )}
 
         {view === 'st_screen' && (
-          <StorytellerScreen
+          <StorytellerCockpit
             edition={edition}
             characters={characters}
             onOpenCombat={() => setCombatDrawerOpen(true)}
@@ -272,6 +354,12 @@ export const App: React.FC = () => {
             onOpenDiablerie={() => setDiablerieModalOpen(true)}
             onOpenBloodBond={() => setBloodBondModalOpen(true)}
             onShowToast={showToast}
+            onOpenProjector={handleOpenProjector}
+            onOpenLobby={() => setRoomLobbyOpen(true)}
+            onOpenWhispers={(id) => {
+              setWhisperRecipientId(id);
+              setWhisperDrawerOpen(true);
+            }}
           />
         )}
 
@@ -280,6 +368,7 @@ export const App: React.FC = () => {
             isOpen={true}
             edition={edition}
             isFullScreen={true}
+            characterName={activeCharacter?.name}
             onRouseCheckResult={success => {
               if (activeCharacter && activeCharacter.edition === 'v5' && !success) {
                 const cur = activeCharacter.hunger || 0;
@@ -313,6 +402,7 @@ export const App: React.FC = () => {
           initialHunger={primedRoll?.hunger || (activeCharacter?.hunger || 0)}
           initialLabel={primedRoll?.label || 'Custom Roll'}
           isFullScreen={false}
+          characterName={activeCharacter?.name}
           onRouseCheckResult={success => {
             if (activeCharacter && activeCharacter.edition === 'v5' && !success) {
               const cur = activeCharacter.hunger || 0;
@@ -321,6 +411,26 @@ export const App: React.FC = () => {
           }}
         />
       )}
+
+      {/* P2P Table Lobby Modal */}
+      <RoomLobbyModal
+        isOpen={roomLobbyOpen}
+        onClose={() => setRoomLobbyOpen(false)}
+        characters={characters}
+        activeCharacterId={activeCharacterId}
+        onSelectCharacter={handleSelectCharacter}
+        onOpenProjector={handleOpenProjector}
+      />
+
+      {/* Private Telepathic Whispers Drawer */}
+      <SecretWhisperDrawer
+        isOpen={whisperDrawerOpen}
+        onClose={() => {
+          setWhisperDrawerOpen(false);
+          setUnreadWhispersCount(syncEngine.getUnreadWhisperCount());
+        }}
+        defaultRecipientPeerId={whisperRecipientId}
+      />
 
       {combatDrawerOpen && (
         <CombatTrackerDrawer

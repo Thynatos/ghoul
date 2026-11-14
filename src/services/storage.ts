@@ -14,6 +14,7 @@ import { CombatEncounter } from '../types/combat';
 import { Coterie } from '../types/coterie';
 import { MysteryBoard } from '../types/investigation';
 import { BloodBondRelation } from '../types/taboo';
+import { ActiveScene, ThreatMatrixState } from '../types/story';
 
 const KEYS = {
   CHARACTERS: 'ghoul_characters',
@@ -31,7 +32,9 @@ const KEYS = {
   COMBAT: 'ghoul_combat_encounters',
   COTERIES: 'ghoul_coteries',
   MYSTERY_BOARDS: 'ghoul_mystery_boards',
-  BLOOD_BONDS: 'ghoul_blood_bonds'
+  BLOOD_BONDS: 'ghoul_blood_bonds',
+  ACTIVE_SCENE: 'ghoul_active_scene',
+  THREAT_MATRIX: 'ghoul_threat_matrix'
 };
 
 export const storageService = {
@@ -378,6 +381,41 @@ export const storageService = {
     this.saveBloodBonds(list);
   },
 
+  // Active Story Scene
+  getActiveScene(): ActiveScene {
+    try {
+      const data = localStorage.getItem(KEYS.ACTIVE_SCENE);
+      if (data) return JSON.parse(data);
+    } catch (e) {}
+    const initial = getInitialActiveScene();
+    this.saveActiveScene(initial);
+    return initial;
+  },
+
+  saveActiveScene(scene: ActiveScene) {
+    localStorage.setItem(KEYS.ACTIVE_SCENE, JSON.stringify(scene));
+  },
+
+  // Threat Matrix
+  getThreatMatrix(): ThreatMatrixState {
+    try {
+      const data = localStorage.getItem(KEYS.THREAT_MATRIX);
+      if (data) return JSON.parse(data);
+    } catch (e) {}
+    const initial: ThreatMatrixState = {
+      masqueradeExposure: 1,
+      secondInquisitionAlert: 1,
+      patrolDensity: 'low',
+      notes: 'CPD Area 1 detectives flagging unverified security leaks in the Loop.'
+    };
+    this.saveThreatMatrix(initial);
+    return initial;
+  },
+
+  saveThreatMatrix(matrix: ThreatMatrixState) {
+    localStorage.setItem(KEYS.THREAT_MATRIX, JSON.stringify(matrix));
+  },
+
   // Backup & Restore
   exportBackupJSON(): string {
     const bundle = {
@@ -394,7 +432,9 @@ export const storageService = {
       combatEncounters: this.getCombatEncounters(),
       coteries: this.getCoteries(),
       mysteryBoards: this.getMysteryBoards(),
-      bloodBonds: this.getBloodBonds()
+      bloodBonds: this.getBloodBonds(),
+      activeScene: this.getActiveScene(),
+      threatMatrix: this.getThreatMatrix()
     };
     return JSON.stringify(bundle, null, 2);
   },
@@ -414,6 +454,8 @@ export const storageService = {
       if (Array.isArray(data.coteries)) this.saveCoteries(data.coteries);
       if (Array.isArray(data.mysteryBoards)) this.saveMysteryBoards(data.mysteryBoards);
       if (Array.isArray(data.bloodBonds)) this.saveBloodBonds(data.bloodBonds);
+      if (data.activeScene) this.saveActiveScene(data.activeScene);
+      if (data.threatMatrix) this.saveThreatMatrix(data.threatMatrix);
       return true;
     } catch (e) {
       console.error('Import failed', e);
@@ -1069,4 +1111,62 @@ function getInitialBloodBonds(): BloodBondRelation[] {
       notes: 'Complete Blood Bond & Vassalage. The ghoul would gladly throw himself into an incinerator if Helena commanded it.'
     }
   ];
+}
+
+function getInitialActiveScene(): ActiveScene {
+  return {
+    id: 'scene_chicago_elysium_1',
+    chronicleId: 'chronicle_chicago_1',
+    title: 'Elysium Court at the Chicago Cultural Center',
+    location: 'Preston Bradley Hall, Chicago Cultural Center (78 E Washington St, Chicago)',
+    sceneType: 'elysium',
+    tension: 2,
+    resonance: 'sanguine',
+    resonanceIntensity: 'intense',
+    presentCharacterIds: ['char_brujah_marcus', 'char_toreador_helena'],
+    presentNpcIds: ['node_prince', 'node_sheriff'],
+    beats: [
+      {
+        id: 'beat_chicago_1',
+        title: 'Formal Petitions to Prince Jackson',
+        description: 'Prince Kevin Jackson holds court under the illuminated 38-foot Tiffany glass dome. Kindred must observe strict Elysium etiquette while presenting territorial grievances.',
+        isCompleted: false,
+        hiddenStorytellerNotes: 'CLASSIFIED: Prince Jackson has secretly authorized Sheriff Damian to wiretap the cloakroom. Jackson wants to see if the Anarch coterie will openly provoke Primogen DuMont.',
+        associatedNpcIds: ['node_prince', 'node_sheriff'],
+        clueNodeIds: ['clue_alderman_note']
+      },
+      {
+        id: 'beat_chicago_2',
+        title: 'Whispers of the Alderman Exsanguination',
+        description: 'Chantry acolytes and Primogen aides trade hushed speculation about Alderman Campbell\'s drained corpse found near Pier 42.',
+        isCompleted: false,
+        hiddenStorytellerNotes: 'Damian found traces of a Nosferatu footprint coated in Bridgeport river silt at the scene, pointing suspicion toward South Side Anarchs.',
+        associatedNpcIds: ['node_sheriff']
+      },
+      {
+        id: 'beat_chicago_3',
+        title: 'Anarch Agitation & Territorial Challenge',
+        description: 'Marcus Vance arrives with demands for open feeding rights in the Pilsen and Bridgeport industrial zones.',
+        isCompleted: false,
+        hiddenStorytellerNotes: 'Vance is unknowingly carrying a burner phone actively tracked by FBI Special Affairs Division (SAD) Unit 4.',
+        associatedNpcIds: ['char_brujah_marcus', 'node_prince']
+      },
+      {
+        id: 'beat_chicago_4',
+        title: 'The Tiffany Dome Voltage Flicker',
+        description: 'Sudden voltage flicker across the marble hall. Security feed flickers out for 12 seconds.',
+        isCompleted: false,
+        hiddenStorytellerNotes: 'Tension escalates to 4 if the blackout occurs. A Tremere gargoyle watcher was spotted perched on the exterior cornice.',
+        associatedNpcIds: []
+      }
+    ],
+    environmentalModifiers: {
+      darkness: false,
+      heavyRainOrFog: true,
+      surveillancePresent: true,
+      crowdedRoom: true,
+      fireHazard: false
+    },
+    startedAt: new Date().toISOString()
+  };
 }

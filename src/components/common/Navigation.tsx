@@ -19,9 +19,13 @@ import {
   Crown,
   Sparkles,
   Settings,
-  ChevronDown
+  ChevronDown,
+  Radio,
+  Tv,
+  Eye
 } from 'lucide-react';
 import { GameEdition } from '../../types/vtm';
+import { ConnectedPeersBadge } from '../network/ConnectedPeersBadge';
 
 interface NavigationProps {
   currentView: string;
@@ -37,6 +41,10 @@ interface NavigationProps {
   onOpenCombat?: () => void;
   onOpenDiablerie?: () => void;
   onOpenBloodBond?: () => void;
+  onOpenLobby?: () => void;
+  onOpenWhispers?: () => void;
+  onOpenProjector?: () => void;
+  unreadWhispersCount?: number;
 }
 
 export const Navigation: React.FC<NavigationProps> = ({
@@ -52,7 +60,11 @@ export const Navigation: React.FC<NavigationProps> = ({
   onImportBackup,
   onOpenCombat,
   onOpenDiablerie,
-  onOpenBloodBond
+  onOpenBloodBond,
+  onOpenLobby,
+  onOpenWhispers,
+  onOpenProjector,
+  unreadWhispersCount = 0
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [arsenalOpen, setArsenalOpen] = useState(false);
@@ -81,7 +93,7 @@ export const Navigation: React.FC<NavigationProps> = ({
     { id: 'coterie', label: 'Coterie', icon: Users },
     { id: 'chronicle', label: 'Chronicle', icon: MapPin },
     { id: 'investigation', label: 'Mystery Board', icon: Search },
-    { id: 'st_screen', label: 'Storyteller Screen', icon: Crown, isSpecial: true },
+    { id: 'st_screen', label: 'Storyteller Cockpit', icon: Crown, isSpecial: true },
     { id: 'wiki', label: 'Compendium', icon: BookOpen },
   ];
 
@@ -148,6 +160,40 @@ export const Navigation: React.FC<NavigationProps> = ({
         {/* Right-Side Storyteller & Utility Dock */}
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           
+          {/* Connected P2P Peers Dock Badge */}
+          {onOpenLobby && (
+            <ConnectedPeersBadge onOpenLobby={onOpenLobby} />
+          )}
+
+          {/* Telepathic Whispers Drawer Trigger */}
+          {onOpenWhispers && (
+            <button
+              type="button"
+              onClick={onOpenWhispers}
+              className="relative p-2 rounded-lg bg-[#14141e] hover:bg-purple-950/50 border border-[#262638] hover:border-purple-800 text-purple-300 transition cursor-pointer shadow-sm"
+              title="Telepathic Whispers (Auspex/Dominate)"
+            >
+              <Eye className="w-4 h-4" />
+              {unreadWhispersCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-600 text-white font-mono text-[9px] font-bold flex items-center justify-center animate-ping-glow shadow-[0_0_8px_rgba(225,29,72,0.8)]">
+                  {unreadWhispersCount}
+                </span>
+              )}
+            </button>
+          )}
+
+          {/* Dual-Screen / Projector View Trigger */}
+          {onOpenProjector && (
+            <button
+              type="button"
+              onClick={onOpenProjector}
+              className="p-2 rounded-lg bg-[#14141e] hover:bg-amber-950/50 border border-[#262638] hover:border-amber-700 text-amber-300 transition cursor-pointer shadow-sm hidden sm:flex items-center"
+              title="Open Projector / Player Clean Screen"
+            >
+              <Tv className="w-4 h-4" />
+            </button>
+          )}
+
           {/* Tactical Combat Trigger */}
           {onOpenCombat && (
             <button
@@ -195,23 +241,58 @@ export const Navigation: React.FC<NavigationProps> = ({
                   STORYTELLER ARSENAL
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => { if (onOpenBloodBond) onOpenBloodBond(); setArsenalOpen(false); }}
-                  className="w-full px-3 py-2 rounded-lg text-left text-neutral-200 hover:text-white hover:bg-rose-950/60 flex items-center gap-2 transition cursor-pointer"
-                >
-                  <Link2 className="w-3.5 h-3.5 text-rose-400" />
-                  Blood Bonds & Torpor
-                </button>
+                {onOpenWhispers && (
+                  <button
+                    type="button"
+                    onClick={() => { onOpenWhispers(); setArsenalOpen(false); }}
+                    className="w-full px-3 py-2 rounded-lg text-left text-purple-300 hover:text-white hover:bg-purple-950/60 flex items-center gap-2 transition cursor-pointer"
+                  >
+                    <Eye className="w-3.5 h-3.5 text-purple-400" />
+                    Telepathic Whispers
+                  </button>
+                )}
 
-                <button
-                  type="button"
-                  onClick={() => { if (onOpenDiablerie) onOpenDiablerie(); setArsenalOpen(false); }}
-                  className="w-full px-3 py-2 rounded-lg text-left text-red-300 hover:text-white hover:bg-red-950/80 flex items-center gap-2 transition cursor-pointer"
-                >
-                  <Skull className="w-3.5 h-3.5 text-red-400" />
-                  The Amaranth (Diablerie)
-                </button>
+                {onOpenProjector && (
+                  <button
+                    type="button"
+                    onClick={() => { onOpenProjector(); setArsenalOpen(false); }}
+                    className="w-full px-3 py-2 rounded-lg text-left text-amber-300 hover:text-white hover:bg-amber-950/60 flex items-center gap-2 transition cursor-pointer"
+                  >
+                    <Tv className="w-3.5 h-3.5 text-amber-400" />
+                    Projector / Player Screen
+                  </button>
+                )}
+
+                {onOpenLobby && (
+                  <button
+                    type="button"
+                    onClick={() => { onOpenLobby(); setArsenalOpen(false); }}
+                    className="w-full px-3 py-2 rounded-lg text-left text-neutral-200 hover:text-white hover:bg-[#1c1424] flex items-center gap-2 transition cursor-pointer"
+                  >
+                    <Radio className="w-3.5 h-3.5 text-rose-400" />
+                    P2P Tabletop Lobby
+                  </button>
+                )}
+
+                <div className="pt-1 mt-1 border-t border-[#201524]">
+                  <button
+                    type="button"
+                    onClick={() => { if (onOpenBloodBond) onOpenBloodBond(); setArsenalOpen(false); }}
+                    className="w-full px-3 py-2 rounded-lg text-left text-neutral-200 hover:text-white hover:bg-rose-950/60 flex items-center gap-2 transition cursor-pointer"
+                  >
+                    <Link2 className="w-3.5 h-3.5 text-rose-400" />
+                    Blood Bonds & Torpor
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => { if (onOpenDiablerie) onOpenDiablerie(); setArsenalOpen(false); }}
+                    className="w-full px-3 py-2 rounded-lg text-left text-red-300 hover:text-white hover:bg-red-950/80 flex items-center gap-2 transition cursor-pointer"
+                  >
+                    <Skull className="w-3.5 h-3.5 text-red-400" />
+                    The Amaranth (Diablerie)
+                  </button>
+                </div>
 
                 <button
                   type="button"
@@ -357,6 +438,33 @@ export const Navigation: React.FC<NavigationProps> = ({
           })}
 
           <div className="pt-2 border-t border-[#1c1c24] flex flex-wrap items-center justify-between gap-1 text-xs text-neutral-400">
+            {onOpenLobby && (
+              <button
+                type="button"
+                onClick={() => { onOpenLobby(); setMobileMenuOpen(false); }}
+                className="flex items-center gap-1.5 py-1.5 px-3 rounded-lg bg-rose-950/40 border border-rose-900/60 text-rose-200 cursor-pointer"
+              >
+                <Radio className="w-3.5 h-3.5 text-rose-400" /> P2P Chamber
+              </button>
+            )}
+            {onOpenWhispers && (
+              <button
+                type="button"
+                onClick={() => { onOpenWhispers(); setMobileMenuOpen(false); }}
+                className="flex items-center gap-1.5 py-1.5 px-3 rounded-lg bg-purple-950/40 border border-purple-900/60 text-purple-200 cursor-pointer"
+              >
+                <Eye className="w-3.5 h-3.5 text-purple-400" /> Whispers
+              </button>
+            )}
+            {onOpenProjector && (
+              <button
+                type="button"
+                onClick={() => { onOpenProjector(); setMobileMenuOpen(false); }}
+                className="flex items-center gap-1.5 py-1.5 px-3 rounded-lg bg-amber-950/40 border border-amber-900/60 text-amber-200 cursor-pointer"
+              >
+                <Tv className="w-3.5 h-3.5 text-amber-400" /> Projector
+              </button>
+            )}
             {onOpenCombat && (
               <button
                 type="button"

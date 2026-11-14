@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import confetti from 'canvas-confetti';
-import { Dices, Flame, Sparkles, X, RotateCcw, AlertTriangle, ShieldCheck } from 'lucide-react';
+import { Dices, Flame, Sparkles, X, RotateCcw, AlertTriangle, ShieldCheck, EyeOff } from 'lucide-react';
 import { GameEdition, RollRequest, RollResult } from '../../types/vtm';
 import { executeV5Roll, executeV20Roll, executeRouseCheck, rerollRegularDice } from '../../services/diceEngine';
 import { soundEngine } from '../../services/soundEngine';
 import { storageService } from '../../services/storage';
+import { syncEngine } from '../../services/syncEngine';
+import { peerService } from '../../services/peerService';
 import { DiceTray3D } from './DiceTray3D';
 import { RollHistory } from './RollHistory';
 
@@ -17,6 +19,7 @@ interface DiceRollerDrawerProps {
   initialLabel?: string;
   isFullScreen?: boolean;
   onRouseCheckResult?: (success: boolean) => void;
+  characterName?: string;
 }
 
 export const DiceRollerDrawer: React.FC<DiceRollerDrawerProps> = ({
@@ -27,13 +30,15 @@ export const DiceRollerDrawer: React.FC<DiceRollerDrawerProps> = ({
   initialHunger = 1,
   initialLabel = 'Custom Roll',
   isFullScreen = false,
-  onRouseCheckResult
+  onRouseCheckResult,
+  characterName
 }) => {
   const [label, setLabel] = useState(initialLabel);
   const [poolSize, setPoolSize] = useState(initialPool);
   const [hungerDice, setHungerDice] = useState(initialHunger);
   const [difficulty, setDifficulty] = useState(edition === 'v5' ? 1 : 6);
   const [specialty, setSpecialty] = useState(false);
+  const [isSecretRoll, setIsSecretRoll] = useState(false);
   const [currentEdition, setCurrentEdition] = useState<GameEdition>(edition);
 
   const [activeRoll, setActiveRoll] = useState<RollResult | null>(null);
@@ -51,7 +56,7 @@ export const DiceRollerDrawer: React.FC<DiceRollerDrawerProps> = ({
       let result: RollResult;
       const request: RollRequest = {
         id: 'req_' + Date.now(),
-        label: label || 'Dice Roll',
+        label: (isSecretRoll ? '[SECRET] ' : '') + (label || 'Dice Roll'),
         edition: currentEdition,
         poolSize,
         hungerDice: currentEdition === 'v5' ? hungerDice : 0,
@@ -71,24 +76,32 @@ export const DiceRollerDrawer: React.FC<DiceRollerDrawerProps> = ({
       setIsRolling(false);
       setSelectedRerollIndices([]);
 
-      // SFX & Celebrations
-      if (result.outcome === 'critical' || result.outcome === 'exceptional') {
-        soundEngine.playCritical();
-        confetti({
-          particleCount: 50,
-          spread: 60,
-          origin: { y: 0.7 },
-          colors: ['#e11d48', '#f59e0b', '#ffffff']
-        });
-      } else if (result.outcome === 'messy_critical') {
-        soundEngine.playCritical();
-        confetti({
-          particleCount: 35,
-          spread: 45,
-          colors: ['#dc2626', '#881337']
-        });
-      } else if (result.outcome === 'bestial_failure' || result.outcome === 'botch') {
-        soundEngine.playBestialFail();
+      // P2P Multiplayer & Dual-Screen Broadcast
+      const localPeer = peerService.getLocalPeer();
+      const rollerName = localPeer.playerName || 'Kindred';
+      const charName = characterName || localPeer.playerName || 'Kindred';
+      syncEngine.broadcastRoll(result, rollerName, charName, isSecretRoll);
+
+      // SFX & Celebrations (only if not a secret roll)
+      if (!isSecretRoll) {
+        if (result.outcome === 'critical' || result.outcome === 'exceptional') {
+          soundEngine.playCritical();
+          confetti({
+            particleCount: 50,
+            spread: 60,
+            origin: { y: 0.7 },
+            colors: ['#e11d48', '#f59e0b', '#ffffff']
+          });
+        } else if (result.outcome === 'messy_critical') {
+          soundEngine.playCritical();
+          confetti({
+            particleCount: 35,
+            spread: 45,
+            colors: ['#dc2626', '#881337']
+          });
+        } else if (result.outcome === 'bestial_failure' || result.outcome === 'botch') {
+          soundEngine.playBestialFail();
+        }
       }
     }, 280);
   };
@@ -326,14 +339,32 @@ export const DiceRollerDrawer: React.FC<DiceRollerDrawerProps> = ({
           </label>
         )}
 
+        {/* Secret Roll Behind Screen Checkbox */}
+        <label className="flex items-center justify-between p-2 rounded-lg bg-black/40 border border-[#232332] text-xs text-neutral-300 cursor-pointer hover:border-rose-900/50 transition">
+          <span className="flex items-center gap-2">
+            <EyeOff className={`w-4 h-4 ${isSecretRoll ? 'text-rose-400' : 'text-neutral-500'}`} />
+            <span className="font-cinzel text-[11px] font-semibold">Secret Storyteller Roll (Behind Screen)</span>
+          </span>
+          <input
+            type="checkbox"
+            checked={isSecretRoll}
+            onChange={e => setIsSecretRoll(e.target.checked)}
+            className="accent-rose-600 rounded w-4 h-4 cursor-pointer"
+          />
+        </label>
+
         {/* Big Roll Button */}
         <button
           type="button"
           onClick={handleRoll}
           disabled={isRolling}
-          className="w-full py-3 rounded-lg bg-gradient-to-r from-rose-800 via-rose-700 to-rose-900 hover:from-rose-700 hover:to-rose-800 text-white font-cinzel font-bold text-sm tracking-wider shadow-[0_0_20px_rgba(225,29,72,0.4)] transition transform hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2"
+          className={`w-full py-3 rounded-lg text-white font-cinzel font-bold text-sm tracking-wider transition transform hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer ${
+            isSecretRoll
+              ? 'bg-gradient-to-r from-stone-900 via-neutral-900 to-stone-900 border border-neutral-700 hover:border-neutral-500 shadow-lg'
+              : 'bg-gradient-to-r from-rose-800 via-rose-700 to-rose-900 hover:from-rose-700 hover:to-rose-800 shadow-[0_0_20px_rgba(225,29,72,0.4)]'
+          }`}
         >
-          <Dices className="w-5 h-5" /> ROLL {poolSize} DICE
+          <Dices className="w-5 h-5" /> {isSecretRoll ? `SECRET ROLL (${poolSize} DICE)` : `ROLL ${poolSize} DICE`}
         </button>
       </div>
 

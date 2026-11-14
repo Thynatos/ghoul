@@ -222,10 +222,10 @@ export const StorytellerScreen: React.FC<StorytellerScreenProps> = ({
                   MASQUERADE INTEGRITY & SI THREAT LEVEL
                 </h3>
               </div>
-              <span className={`px-2 py-0.5 rounded text-xs font-mono font-bold ${
-                masqueradeLevel >= 4 ? 'bg-red-950 text-red-300 border border-red-700' :
-                masqueradeLevel >= 2 ? 'bg-amber-950 text-amber-300 border border-amber-700' :
-                'bg-emerald-950 text-emerald-300 border border-emerald-700'
+              <span className={`px-2.5 py-0.5 rounded text-xs font-mono font-bold ${
+                masqueradeLevel >= 4 ? 'bg-red-950 text-red-300 border border-red-700 shadow-[0_0_10px_rgba(225,29,72,0.3)]' :
+                masqueradeLevel >= 2 ? 'bg-amber-950 text-amber-300 border border-amber-700 shadow-[0_0_10px_rgba(245,158,11,0.2)]' :
+                'bg-[#161622] text-slate-300 border border-slate-700'
               }`}>
                 LEVEL {masqueradeLevel} / 5
               </span>
@@ -239,12 +239,12 @@ export const StorytellerScreen: React.FC<StorytellerScreenProps> = ({
                   type="button"
                   onClick={() => setMasqueradeLevel(lvl)}
                   className={`
-                    py-2 rounded font-mono font-bold text-xs transition border
+                    py-2 rounded font-mono font-bold text-xs transition cursor-pointer border
                     ${lvl <= masqueradeLevel 
-                      ? lvl >= 4 ? 'bg-red-700 border-red-500 text-white shadow-[0_0_10px_#ef4444]'
-                        : lvl >= 2 ? 'bg-amber-600 border-amber-400 text-white shadow-[0_0_8px_#f59e0b]'
-                        : 'bg-emerald-700 border-emerald-500 text-white shadow-[0_0_8px_#10b981]'
-                      : 'bg-[#150e1c] border-[#251730] text-neutral-600 hover:border-neutral-500'}
+                      ? lvl >= 4 ? 'bg-gradient-to-t from-red-950 to-red-800 border-red-500 text-white shadow-[0_0_12px_rgba(225,29,72,0.4)]' 
+                        : lvl >= 2 ? 'bg-gradient-to-t from-amber-950 to-amber-800 border-amber-500 text-amber-100 shadow-[0_0_10px_rgba(245,158,11,0.3)]' 
+                        : 'bg-gradient-to-t from-[#14141e] to-slate-800 border-slate-500 text-slate-200'
+                      : 'bg-[#100d14] border-[#221728] text-neutral-600 hover:border-neutral-500'}
                   `}
                 >
                   {lvl}
@@ -433,34 +433,55 @@ export const StorytellerScreen: React.FC<StorytellerScreenProps> = ({
             <span className="text-[10px] font-mono text-neutral-400">Quick Reference</span>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 font-mono text-xs">
-            <div className="p-2.5 bg-[#140d1a] border border-[#261530] rounded-lg">
-              <span className="text-emerald-400 font-bold block mb-0.5">Diff 1: Routine</span>
-              <span className="text-[10px] text-neutral-400 font-sans">Driving in clear weather; basic intimidation.</span>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
+            <div className="p-3 bg-[#130d18] border border-[#26172e] rounded-xl flex items-start gap-2.5">
+              <span className="w-6 h-6 rounded-full bg-[#1e1524] border border-neutral-700 text-neutral-300 font-cinzel font-bold text-xs flex items-center justify-center shrink-0">1</span>
+              <div>
+                <span className="font-cinzel text-xs font-bold text-neutral-200 block">Routine</span>
+                <span className="text-[10px] text-neutral-400 font-sans leading-tight mt-0.5 block">Driving in clear weather; casual intimidation.</span>
+              </div>
             </div>
-            <div className="p-2.5 bg-[#140d1a] border border-[#261530] rounded-lg">
-              <span className="text-emerald-300 font-bold block mb-0.5">Diff 2: Straightforward</span>
-              <span className="text-[10px] text-neutral-400 font-sans">Picking standard padlock; seducing eager mortal.</span>
+            <div className="p-3 bg-[#130d18] border border-[#26172e] rounded-xl flex items-start gap-2.5">
+              <span className="w-6 h-6 rounded-full bg-[#1e1524] border border-neutral-700 text-neutral-300 font-cinzel font-bold text-xs flex items-center justify-center shrink-0">2</span>
+              <div>
+                <span className="font-cinzel text-xs font-bold text-neutral-200 block">Straightforward</span>
+                <span className="text-[10px] text-neutral-400 font-sans leading-tight mt-0.5 block">Picking standard lock; seducing eager mortal.</span>
+              </div>
             </div>
-            <div className="p-2.5 bg-[#140d1a] border border-[#261530] rounded-lg">
-              <span className="text-amber-300 font-bold block mb-0.5">Diff 3: Moderate</span>
-              <span className="text-[10px] text-neutral-400 font-sans">Standard contested action; shadowing wary cop.</span>
+            <div className="p-3 bg-[#130d18] border border-[#26172e] rounded-xl flex items-start gap-2.5">
+              <span className="w-6 h-6 rounded-full bg-amber-950/60 border border-amber-800 text-amber-300 font-cinzel font-bold text-xs flex items-center justify-center shrink-0">3</span>
+              <div>
+                <span className="font-cinzel text-xs font-bold text-amber-200 block">Moderate</span>
+                <span className="text-[10px] text-neutral-400 font-sans leading-tight mt-0.5 block">Standard contested test; shadowing wary cop.</span>
+              </div>
             </div>
-            <div className="p-2.5 bg-[#140d1a] border border-[#261530] rounded-lg">
-              <span className="text-amber-400 font-bold block mb-0.5">Diff 4: Challenging</span>
-              <span className="text-[10px] text-neutral-400 font-sans">Hacking encrypted server; calming enraged Brujah.</span>
+            <div className="p-3 bg-[#130d18] border border-[#26172e] rounded-xl flex items-start gap-2.5">
+              <span className="w-6 h-6 rounded-full bg-amber-950/60 border border-amber-800 text-amber-300 font-cinzel font-bold text-xs flex items-center justify-center shrink-0">4</span>
+              <div>
+                <span className="font-cinzel text-xs font-bold text-amber-200 block">Challenging</span>
+                <span className="text-[10px] text-neutral-400 font-sans leading-tight mt-0.5 block">Hacking secure server; calming enraged Brujah.</span>
+              </div>
             </div>
-            <div className="p-2.5 bg-[#140d1a] border border-[#261530] rounded-lg">
-              <span className="text-rose-400 font-bold block mb-0.5">Diff 5: Hard</span>
-              <span className="text-[10px] text-neutral-400 font-sans">Bypassing biometric vault; resisting Elder Dominate.</span>
+            <div className="p-3 bg-[#130d18] border border-[#26172e] rounded-xl flex items-start gap-2.5">
+              <span className="w-6 h-6 rounded-full bg-rose-950/80 border border-rose-800 text-rose-300 font-cinzel font-bold text-xs flex items-center justify-center shrink-0">5</span>
+              <div>
+                <span className="font-cinzel text-xs font-bold text-rose-200 block">Hard</span>
+                <span className="text-[10px] text-neutral-400 font-sans leading-tight mt-0.5 block">Bypassing biometric vault; resisting Elder Dominate.</span>
+              </div>
             </div>
-            <div className="p-2.5 bg-[#140d1a] border border-[#261530] rounded-lg">
-              <span className="text-red-400 font-bold block mb-0.5">Diff 6: Very Hard</span>
-              <span className="text-[10px] text-neutral-400 font-sans">Outrunning Lupine in woods; resisting Rötschreck.</span>
+            <div className="p-3 bg-[#130d18] border border-[#26172e] rounded-xl flex items-start gap-2.5">
+              <span className="w-6 h-6 rounded-full bg-rose-950/80 border border-rose-800 text-rose-300 font-cinzel font-bold text-xs flex items-center justify-center shrink-0">6</span>
+              <div>
+                <span className="font-cinzel text-xs font-bold text-rose-200 block">Very Hard</span>
+                <span className="text-[10px] text-neutral-400 font-sans leading-tight mt-0.5 block">Outrunning Lupine in woods; resisting Rötschreck.</span>
+              </div>
             </div>
-            <div className="p-2.5 bg-[#140d1a] border border-[#261530] rounded-lg col-span-2">
-              <span className="text-purple-400 font-bold block mb-0.5">Diff 7+: Nearly Impossible</span>
-              <span className="text-[10px] text-neutral-400 font-sans">Surviving high-noon sun; breaking full Blood Bond on 3rd drink without Willpower.</span>
+            <div className="p-3 bg-[#130d18] border border-[#26172e] rounded-xl col-span-2 flex items-start gap-2.5">
+              <span className="w-6 h-6 rounded-full bg-red-950 border border-red-600 text-red-200 font-cinzel font-bold text-xs flex items-center justify-center shrink-0 shadow-[0_0_8px_rgba(225,29,72,0.4)]">7+</span>
+              <div>
+                <span className="font-cinzel text-xs font-bold text-red-300 block">Nearly Impossible</span>
+                <span className="text-[10px] text-neutral-400 font-sans leading-tight mt-0.5 block">Surviving high-noon daylight; breaking 3rd drink Blood Bond without Willpower.</span>
+              </div>
             </div>
           </div>
 

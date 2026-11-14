@@ -528,9 +528,9 @@ export const MysteryInvestigationBoard: React.FC<MysteryInvestigationBoardProps>
               const targetNode = activeBoard.nodes.find(n => n.id === link.targetId);
               if (!sourceNode || !targetNode) return null;
 
-              const sx = sourceNode.x + 105;
+              const sx = sourceNode.x + 115;
               const sy = sourceNode.y + 14;
-              const tx = targetNode.x + 105;
+              const tx = targetNode.x + 115;
               const ty = targetNode.y + 14;
               const mx = (sx + tx) / 2;
               const my = (sy + ty) / 2;
@@ -559,13 +559,13 @@ export const MysteryInvestigationBoard: React.FC<MysteryInvestigationBoardProps>
                   {/* Taped label on red thread */}
                   {link.label && (
                     <foreignObject
-                      x={mx - 65}
+                      x={mx - 80}
                       y={my - 14}
-                      width="130"
-                      height="28"
+                      width="160"
+                      height="32"
                       className="overflow-visible"
                     >
-                      <div className="bg-[#18080f]/95 border border-red-800 text-[10px] font-mono text-red-200 px-2 py-0.5 rounded-md text-center truncate shadow-lg">
+                      <div className="bg-[#14060c]/95 border border-red-700 text-[10px] font-cinzel font-semibold text-rose-200 px-2 py-0.5 rounded shadow-[0_4px_12px_rgba(0,0,0,0.8)] text-center truncate">
                         {link.label}
                       </div>
                     </foreignObject>
@@ -589,7 +589,7 @@ export const MysteryInvestigationBoard: React.FC<MysteryInvestigationBoardProps>
                   top: `${node.y}px`
                 }}
                 className={`
-                  absolute z-20 w-52 rounded-xl p-3.5 shadow-2xl cursor-grab active:cursor-grabbing border transition-all
+                  absolute z-20 w-56 sm:w-60 rounded-xl p-3.5 shadow-2xl cursor-grab active:cursor-grabbing border transition-all
                   ${isSelected ? 'ring-2 ring-rose-500 scale-105 z-30 shadow-[0_0_25px_rgba(225,29,72,0.4)]' : 'hover:scale-102'}
                   ${node.isSecret 
                     ? 'bg-[#180918] border-purple-800 shadow-[0_0_15px_rgba(147,51,234,0.3)]' 
@@ -623,7 +623,7 @@ export const MysteryInvestigationBoard: React.FC<MysteryInvestigationBoardProps>
                     )}
                   </div>
 
-                  <h4 className="font-cinzel text-xs font-bold text-neutral-100 truncate">
+                  <h4 className="font-cinzel text-xs font-bold text-neutral-100 leading-snug line-clamp-2">
                     {node.title}
                   </h4>
 
@@ -633,9 +633,9 @@ export const MysteryInvestigationBoard: React.FC<MysteryInvestigationBoardProps>
 
                   {/* Storyteller Secret Intel Strip */}
                   {isStorytellerMode && node.secretNotes && (
-                    <div className="mt-2.5 pt-2 border-t border-[#251728] text-[9px] text-amber-300 font-mono line-clamp-1 flex items-center gap-1">
-                      <Sparkles className="w-2.5 h-2.5 text-amber-400 shrink-0" />
-                      {node.secretNotes}
+                    <div className="mt-2.5 pt-2 border-t border-rose-950/60 bg-red-950/20 -mx-3.5 -mb-3.5 p-2 rounded-b-xl text-[10px] text-rose-300 font-serif italic flex items-start gap-1.5">
+                      <FileText className="w-3 h-3 text-rose-400 shrink-0 mt-0.5" />
+                      <span className="line-clamp-2 leading-tight">{node.secretNotes}</span>
                     </div>
                   )}
                 </div>

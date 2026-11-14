@@ -243,11 +243,11 @@ export const CharacterSheet: React.FC<CharacterSheetProps> = ({
               </div>
               <div>
                 <span className="text-neutral-500 block font-cinzel text-[10px]">HAVEN</span>
-                <span className="text-neutral-200 font-medium truncate block">{character.haven || 'None'}</span>
+                <span className="text-neutral-200 font-medium break-words leading-tight">{character.haven || 'None'}</span>
               </div>
               <div>
                 <span className="text-neutral-500 block font-cinzel text-[10px]">COTERIE</span>
-                <span className="text-neutral-200 font-medium truncate block">{character.coterie || 'Solitary'}</span>
+                <span className="text-neutral-200 font-medium break-words leading-tight">{character.coterie || 'Solitary'}</span>
               </div>
             </div>
 

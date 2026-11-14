@@ -74,44 +74,44 @@ export const DamageTracker: React.FC<DamageTrackerProps> = ({
   const isImpaired = totalDamage >= damage.length;
 
   return (
-    <div className="bg-[#0e0e12] border border-[#23232c] rounded-lg p-3">
+    <div className="bg-[#0c0c12] border border-[#20202d] hover:border-neutral-700/60 rounded-xl p-3.5 flex flex-col justify-between transition-colors">
       <div className="flex items-center justify-between mb-2">
-        <div>
-          <span className="font-cinzel text-sm font-semibold tracking-wider text-neutral-200 uppercase">
+        <div className="flex items-center gap-1.5">
+          <span className="font-cinzel text-xs font-bold tracking-wider text-neutral-100 uppercase">
             {label}
           </span>
-          {subtitle && <span className="text-xs text-neutral-500 ml-2">({subtitle})</span>}
+          {subtitle && <span className="text-[10px] text-neutral-400 font-mono">({subtitle})</span>}
         </div>
-        <div className="text-xs space-x-2">
+        <div className="text-[11px] flex items-center gap-1.5">
           {aggravatedCount > 0 && (
-            <span className="text-rose-500 font-mono font-medium">{aggravatedCount} Agg</span>
+            <span className="text-rose-400 font-mono font-bold bg-rose-950/80 border border-rose-900 px-1 rounded">{aggravatedCount} Agg</span>
           )}
           {superficialCount > 0 && (
-            <span className="text-amber-400 font-mono font-medium">{superficialCount} Sup</span>
+            <span className="text-amber-300 font-mono font-bold bg-amber-950/70 border border-amber-800 px-1 rounded">{superficialCount} Sup</span>
           )}
           {isImpaired && (
-            <span className="text-xs bg-rose-950/80 border border-rose-800 text-rose-300 px-1.5 py-0.5 rounded animate-pulse">
+            <span className="text-[10px] bg-rose-950 border border-rose-700 text-rose-300 px-1.5 py-0.5 rounded font-bold animate-pulse">
               IMPAIRED (-2)
             </span>
           )}
         </div>
       </div>
 
-      {/* Boxes Grid */}
-      <div className="flex flex-wrap gap-1.5 my-2">
+      {/* Boxes Grid: Always aligns 1 to 10 boxes on a single pristine row */}
+      <div className="grid grid-flow-col auto-cols-fr gap-1 sm:gap-1.5 my-2">
         {damage.map((type, i) => (
           <button
             key={i}
             type="button"
             onClick={() => toggleBox(i)}
-            title={`Box ${i + 1}: ${type} (Click to cycle)`}
+            title={`Box ${i + 1}: ${type} (Click to cycle None -> Sup -> Agg)`}
             className={`
-              w-7 h-7 rounded border font-mono font-bold text-sm flex items-center justify-center transition-all duration-100
+              h-7 min-w-[20px] max-w-[34px] rounded border font-mono font-black text-xs flex items-center justify-center cursor-pointer transition-all duration-150
               ${type === 'aggravated' 
-                ? 'bg-rose-950 border-rose-600 text-rose-400 shadow-[0_0_8px_rgba(225,29,72,0.4)]' 
+                ? 'bg-rose-950 border-rose-600 text-rose-300 shadow-[0_0_8px_rgba(225,29,72,0.4)]' 
                 : type === 'superficial'
-                ? 'bg-amber-950/70 border-amber-500 text-amber-300'
-                : 'bg-[#15151c] border-[#2c2c38] text-neutral-600 hover:border-neutral-500'}
+                ? 'bg-amber-950/80 border-amber-500 text-amber-200 shadow-[0_0_6px_rgba(245,158,11,0.3)]'
+                : 'bg-[#14141c] border-[#282838] text-neutral-600 hover:border-neutral-500 hover:bg-[#1a1a24]'}
             `}
           >
             {type === 'aggravated' ? '✕' : type === 'superficial' ? '╱' : ''}
@@ -120,25 +120,28 @@ export const DamageTracker: React.FC<DamageTrackerProps> = ({
       </div>
 
       {/* Quick Action Controls */}
-      <div className="flex items-center justify-end gap-1.5 mt-2 pt-2 border-t border-[#1c1c24] text-[11px]">
+      <div className="flex items-center justify-end gap-1.5 mt-2 pt-2 border-t border-[#1a1a24] text-[10px] font-mono">
         <button
           type="button"
           onClick={addSuperficial}
-          className="px-2 py-0.5 rounded bg-[#181822] hover:bg-[#242433] text-amber-400 border border-[#2b2b3b] transition"
+          className="px-2 py-0.5 rounded bg-[#161622] hover:bg-[#222232] text-amber-300 border border-[#2b2b3d] cursor-pointer transition"
+          title="Add 1 Superficial Damage"
         >
           + Sup [/]
         </button>
         <button
           type="button"
           onClick={addAggravated}
-          className="px-2 py-0.5 rounded bg-[#181822] hover:bg-rose-950/40 text-rose-400 border border-[#2b2b3b] transition"
+          className="px-2 py-0.5 rounded bg-[#161622] hover:bg-rose-950/60 text-rose-400 border border-[#2b2b3d] cursor-pointer transition"
+          title="Add 1 Aggravated Damage"
         >
           + Agg [X]
         </button>
         <button
           type="button"
           onClick={clearOne}
-          className="px-2 py-0.5 rounded bg-[#181822] hover:bg-[#242433] text-neutral-400 border border-[#2b2b3b] transition"
+          className="px-2 py-0.5 rounded bg-[#161622] hover:bg-[#222232] text-neutral-300 border border-[#2b2b3d] cursor-pointer transition"
+          title="Mend 1 Damage"
         >
           Mend [-]
         </button>

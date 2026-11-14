@@ -48,10 +48,9 @@ export const CityMapWorkbench: React.FC<CityMapWorkbenchProps> = ({
       zoomControl: true
     });
 
-    // Dark Matter basemap from CartoDB
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-      attribution: '&copy; <a href="https://carto.com/">CARTO</a> &copy; OpenStreetMap',
-      subdomains: 'abcd',
+    // Free OpenStreetMap tilelayer with dark noir filter (zero watermarks, zero API key)
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors',
       maxZoom: 19
     }).addTo(map);
 
@@ -220,7 +219,7 @@ export const CityMapWorkbench: React.FC<CityMapWorkbenchProps> = ({
       {/* Map View & Details Split */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
         {/* Leaflet Container */}
-        <div className="lg:col-span-3 bg-[#0a0a0f] border border-[#20202d] rounded-2xl overflow-hidden h-[540px] relative shadow-2xl">
+        <div className="lg:col-span-3 bg-[#0a0a0f] border border-[#20202d] rounded-2xl overflow-hidden h-[540px] relative shadow-2xl dark-map-tiles">
           <div ref={mapContainerRef} className="w-full h-full z-0" />
           <div className="absolute bottom-3 left-3 z-10 bg-black/85 backdrop-blur-md border border-neutral-800 rounded-lg px-3 py-1.5 text-[11px] font-mono text-neutral-400 pointer-events-none">
             💡 Click anywhere on the map to plant a new Kindred pin

@@ -367,10 +367,10 @@ export const CoterieManagerView: React.FC<CoterieManagerViewProps> = ({
           <button
             type="button"
             onClick={handleStartEditHeader}
-            className="px-3.5 py-2 rounded-lg bg-[#14141e] hover:bg-[#20202e] border border-[#2b2b3d] text-xs font-cinzel text-neutral-300 hover:text-white flex items-center gap-1.5 transition"
+            className="px-3.5 py-2 rounded-lg bg-[#14141e] hover:bg-[#20202e] border border-[#2b2b3d] text-xs font-cinzel text-neutral-300 hover:text-white flex items-center gap-1.5 transition cursor-pointer"
           >
             <Edit3 className="w-3.5 h-3.5 text-rose-400" />
-            Edit Dossier
+            Edit Coterie & Domain
           </button>
         </div>
 
@@ -435,8 +435,8 @@ export const CoterieManagerView: React.FC<CoterieManagerViewProps> = ({
             <div className="bg-[#0f0f18] border border-[#222232] rounded-xl p-4 flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <span className="font-cinzel font-bold text-blue-300 text-sm">PORTILLON</span>
-                  <span className="text-xs font-mono font-bold text-blue-400">{activeCoterie.portillon} / 5</span>
+                  <span className="font-cinzel font-bold text-slate-300 text-sm">PORTILLON</span>
+                  <span className="text-xs font-mono font-bold text-slate-300">{activeCoterie.portillon} / 5</span>
                 </div>
                 <p className="text-xs text-neutral-400 leading-relaxed mb-3">
                   Physical security, fortifications, electronic alarms, blast doors, and difficulty for intruders to breach the haven undetected.
@@ -447,7 +447,7 @@ export const CoterieManagerView: React.FC<CoterieManagerViewProps> = ({
                   value={activeCoterie.portillon}
                   max={5}
                   min={0}
-                  color="blue"
+                  color="silver"
                   size="md"
                   onChange={val => handleUpdateDomainRating('portillon', val)}
                 />
@@ -480,7 +480,7 @@ export const CoterieManagerView: React.FC<CoterieManagerViewProps> = ({
                   type="button"
                   onClick={() => handleToggleHavenTrait(trait.name)}
                   className={`
-                    p-3 rounded-xl border text-left transition flex flex-col justify-between
+                    p-3 rounded-xl border text-left transition flex flex-col justify-between min-h-[96px] cursor-pointer
                     ${isSelected 
                       ? 'bg-rose-950/50 border-rose-600 shadow-[0_0_12px_rgba(225,29,72,0.2)] text-white' 
                       : 'bg-[#0e0e16] border-[#222232] text-neutral-400 hover:border-neutral-600'}
@@ -491,7 +491,7 @@ export const CoterieManagerView: React.FC<CoterieManagerViewProps> = ({
                     <span className="font-cinzel text-xs font-bold">{trait.name}</span>
                     {isSelected && <Check className="w-3.5 h-3.5 text-rose-400" />}
                   </div>
-                  <p className="text-[10px] text-neutral-400 font-sans line-clamp-2">
+                  <p className="text-[10px] text-neutral-300 font-sans leading-tight line-clamp-3">
                     {trait.description}
                   </p>
                 </button>
@@ -662,7 +662,7 @@ export const CoterieManagerView: React.FC<CoterieManagerViewProps> = ({
               </div>
               <div>
                 <span className="text-[10px] font-mono text-neutral-400 uppercase block mb-1">Favored Disciplines:</span>
-                <p className="text-rose-300 font-mono">{currentTypeInfo.favoredDisciplines.join(', ')}</p>
+                <p className="text-rose-200 font-cinzel font-semibold tracking-wide text-xs">{currentTypeInfo.favoredDisciplines.join(', ')}</p>
               </div>
               <div>
                 <span className="text-[10px] font-mono text-neutral-400 uppercase block mb-1">Standard Advantages:</span>

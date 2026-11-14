@@ -309,6 +309,14 @@ export const storageService = {
     try {
       const data = localStorage.getItem(KEYS.MYSTERY_BOARDS);
       const all: MysteryBoard[] = data ? JSON.parse(data) : getInitialMysteryBoards();
+      // Ensure layout collision migration
+      all.forEach(b => {
+        const sulfur = b.nodes.find(n => n.id === 'node_evidence_sulfur');
+        if (sulfur && sulfur.y < 500) {
+          sulfur.y = 510;
+          sulfur.x = 390;
+        }
+      });
       return chronicleId ? all.filter(m => !m.chronicleId || m.chronicleId === chronicleId) : all;
     } catch (e) {
       return getInitialMysteryBoards();
@@ -910,8 +918,8 @@ function getInitialMysteryBoards(): MysteryBoard[] {
           type: 'crime_scene',
           title: 'River North Penthouse Study',
           description: 'The crime scene: 44th floor private study. Locked from the inside with deadbolt and biometric keypad. Balcony French door slightly ajar.',
-          x: 140,
-          y: 90,
+          x: 90,
+          y: 70,
           status: 'discovered',
           color: '#e11d48',
           secretNotes: 'Balcony railing shows faint scorch residue and traces of Banu Haqim Blood Sorcery glyphs.'
@@ -921,8 +929,8 @@ function getInitialMysteryBoards(): MysteryBoard[] {
           type: 'victim',
           title: 'Alderman Thomas Campbell',
           description: 'Age 54. Powerful chair of City Zoning Commission. Handled commercial permits along the Chicago River.',
-          x: 420,
-          y: 90,
+          x: 390,
+          y: 70,
           status: 'discovered',
           color: '#f43f5e',
           secretNotes: 'Campbell was secretly under Ventrue Dominate to approve zoning waivers for Elysium annex properties.'
@@ -932,8 +940,8 @@ function getInitialMysteryBoards(): MysteryBoard[] {
           type: 'autopsy',
           title: 'Coroner Report #ME-402',
           description: 'Cause of death: acute hypovolemic shock. Zero detectable blood volume remaining in body. Two clean puncture wounds on right carotid artery.',
-          x: 420,
-          y: 280,
+          x: 390,
+          y: 290,
           status: 'discovered',
           color: '#a855f7',
           secretNotes: 'Coroner detected faint supernatural salivary enzyme that prevents mortal blood clotting and suppresses bruising.'
@@ -943,8 +951,8 @@ function getInitialMysteryBoards(): MysteryBoard[] {
           type: 'clue',
           title: 'Distorted CCTV Feed (03:14 AM)',
           description: 'Hallway camera footage outside penthouse suffered heavy magnetic static between 03:12 and 03:22 AM. A fleeting cloaked shadow is visible.',
-          x: 140,
-          y: 280,
+          x: 90,
+          y: 320,
           status: 'discovered',
           color: '#38bdf8',
           secretNotes: 'Pattern of electromagnetic static matches Obfuscate Level 3 (Cloak of Shadows) optical distortion.'
@@ -954,8 +962,8 @@ function getInitialMysteryBoards(): MysteryBoard[] {
           type: 'suspect',
           title: 'Father Lucian (Vatican Entity)',
           description: 'A shadowy Jesuit priest seen lingering around the precinct morgue and demanding copies of Campbell\'s personal diaries.',
-          x: 700,
-          y: 90,
+          x: 690,
+          y: 70,
           status: 'unsolved',
           color: '#eab308',
           secretNotes: 'Second Inquisition contact. Believes Campbell was killed by Anarchs to incite Camarilla panic.'
@@ -965,8 +973,8 @@ function getInitialMysteryBoards(): MysteryBoard[] {
           type: 'evidence',
           title: 'Sulfur & Alchemical Ash Residue',
           description: 'Grey-white crystalline residue collected from the fireplace hearth in Campbell\'s study. Smells faintly of copper and ozone.',
-          x: 420,
-          y: 450,
+          x: 390,
+          y: 510,
           status: 'discovered',
           color: '#22c55e',
           secretNotes: 'Alchemical sulfur component from an illicit blood sorcery divination ritual.'
@@ -976,8 +984,8 @@ function getInitialMysteryBoards(): MysteryBoard[] {
           type: 'suspect',
           title: 'Sister Nadia (Blood Cultist)',
           description: 'Secret Conspirator: Operates a clandestine blood shrine in an abandoned subway vault beneath the Loop.',
-          x: 700,
-          y: 280,
+          x: 690,
+          y: 320,
           status: 'hidden',
           isSecret: true,
           color: '#ef4444',

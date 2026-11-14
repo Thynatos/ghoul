@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   Flame, 
   User, 
@@ -16,10 +16,10 @@ import {
   Users, 
   Skull, 
   Link2,
-  ShieldAlert,
-  Compass,
-  FileSpreadsheet,
-  Crown
+  Crown,
+  Sparkles,
+  Settings,
+  ChevronDown
 } from 'lucide-react';
 import { GameEdition } from '../../types/vtm';
 
@@ -55,9 +55,27 @@ export const Navigation: React.FC<NavigationProps> = ({
   onOpenBloodBond
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [taboosDropdownOpen, setTaboosDropdownOpen] = useState(false);
+  const [arsenalOpen, setArsenalOpen] = useState(false);
+  const [systemOpen, setSystemOpen] = useState(false);
 
-  // Clean, focused primary navigation
+  const arsenalRef = useRef<HTMLDivElement>(null);
+  const systemRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdowns on outside click
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (arsenalRef.current && !arsenalRef.current.contains(e.target as Node)) {
+        setArsenalOpen(false);
+      }
+      if (systemRef.current && !systemRef.current.contains(e.target as Node)) {
+        setSystemOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, []);
+
+  // Focused primary navigation tabs
   const primaryNavItems = [
     { id: 'sheet', label: 'Dossier', icon: User },
     { id: 'coterie', label: 'Coterie', icon: Users },
@@ -73,37 +91,34 @@ export const Navigation: React.FC<NavigationProps> = ({
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-[#07070a]/95 border-b border-[#1c1c24] backdrop-blur-md">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
+    <header className="sticky top-0 z-40 bg-[#060609]/95 border-b border-[#1b1b26] backdrop-blur-md">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 h-16 flex items-center justify-between gap-2 sm:gap-4">
         
         {/* Brand */}
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-2 shrink-0">
           <button
             type="button"
             onClick={() => onNavigate('sheet')}
-            className="flex items-center gap-2.5 group text-left"
+            className="flex items-center gap-2 group text-left cursor-pointer"
           >
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-rose-700 to-rose-950 border border-rose-600 flex items-center justify-center shadow-[0_0_15px_rgba(225,29,72,0.4)] group-hover:scale-105 transition-transform">
-              <Flame className="w-5 h-5 text-rose-100 fill-rose-200" />
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-rose-700 to-rose-950 border border-rose-600 flex items-center justify-center shadow-[0_0_12px_rgba(225,29,72,0.4)] group-hover:scale-105 transition-transform">
+              <Flame className="w-4 h-4 text-rose-100 fill-rose-200" />
             </div>
             <div>
               <div className="flex items-center gap-1.5">
-                <span className="font-cinzel font-black tracking-widest text-lg text-white group-hover:text-rose-400 transition-colors">
+                <span className="font-cinzel font-black tracking-widest text-base sm:text-lg text-white group-hover:text-rose-400 transition-colors">
                   GHOUL
                 </span>
-                <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-rose-950/80 border border-rose-800 text-rose-300">
+                <span className="text-[9px] font-mono font-bold px-1 py-0.5 rounded bg-rose-950/80 border border-rose-800 text-rose-300">
                   {edition.toUpperCase()}
                 </span>
               </div>
-              <p className="text-[10px] font-sans text-neutral-400 tracking-tight hidden lg:block">
-                World of Darkness Suite
-              </p>
             </div>
           </button>
         </div>
 
         {/* Desktop Primary Nav */}
-        <nav className="hidden md:flex items-center gap-1">
+        <nav className="hidden lg:flex items-center gap-1">
           {primaryNavItems.map(item => {
             const Icon = item.icon;
             const isActive = currentView === item.id;
@@ -113,32 +128,32 @@ export const Navigation: React.FC<NavigationProps> = ({
                 type="button"
                 onClick={() => handleNavClick(item.id)}
                 className={`
-                  px-3 py-1.5 rounded-lg text-xs font-cinzel font-semibold tracking-wider flex items-center gap-1.5 transition-all
+                  px-3 py-1.5 rounded-lg text-xs font-cinzel font-semibold tracking-wider flex items-center gap-1.5 transition-all cursor-pointer
                   ${isActive 
                     ? item.isSpecial 
-                      ? 'bg-amber-950/80 border border-amber-600 text-amber-200 shadow-[0_0_15px_rgba(245,158,11,0.3)]'
-                      : 'bg-rose-950/70 border border-rose-800 text-rose-200 shadow-[0_0_12px_rgba(225,29,72,0.3)]'
+                      ? 'bg-amber-950/70 border border-amber-600 text-amber-200 shadow-[0_0_12px_rgba(245,158,11,0.25)]'
+                      : 'bg-rose-950/70 border border-rose-800 text-rose-200 shadow-[0_0_10px_rgba(225,29,72,0.25)]'
                     : item.isSpecial
-                      ? 'text-amber-300/80 hover:text-amber-200 hover:bg-amber-950/30 border border-amber-900/50'
-                      : 'text-neutral-400 hover:text-neutral-200 hover:bg-[#14141c] border border-transparent'}
+                      ? 'text-amber-300/80 hover:text-amber-200 hover:bg-amber-950/30 border border-amber-900/40'
+                      : 'text-neutral-400 hover:text-neutral-100 hover:bg-[#14141e] border border-transparent'}
                 `}
               >
-                <Icon className={`w-3.5 h-3.5 ${isActive ? (item.isSpecial ? 'text-amber-300' : 'text-rose-400') : (item.isSpecial ? 'text-amber-400/80' : 'text-neutral-500')}`} />
-                {item.label}
+                <Icon className={`w-3.5 h-3.5 ${isActive ? (item.isSpecial ? 'text-amber-300' : 'text-rose-400') : (item.isSpecial ? 'text-amber-400/70' : 'text-neutral-500')}`} />
+                <span>{item.label}</span>
               </button>
             );
           })}
         </nav>
 
         {/* Right-Side Storyteller & Utility Dock */}
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           
           {/* Tactical Combat Trigger */}
           {onOpenCombat && (
             <button
               type="button"
               onClick={onOpenCombat}
-              className="px-2.5 py-1.5 rounded-lg bg-red-950/80 hover:bg-red-900 border border-red-800 text-red-200 font-cinzel text-xs font-bold flex items-center gap-1.5 shadow-[0_0_12px_rgba(225,29,72,0.3)] transition"
+              className="px-2.5 py-1.5 rounded-lg bg-red-950/80 hover:bg-red-900 border border-red-800 text-red-200 font-cinzel text-xs font-bold flex items-center gap-1.5 shadow-[0_0_10px_rgba(225,29,72,0.3)] transition cursor-pointer"
               title="Tactical Combat & Initiative Tracker"
             >
               <Swords className="w-3.5 h-3.5 text-red-400" />
@@ -146,137 +161,178 @@ export const Navigation: React.FC<NavigationProps> = ({
             </button>
           )}
 
-          {/* Dark Taboos Dropdown / Trigger */}
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setTaboosDropdownOpen(!taboosDropdownOpen)}
-              className="p-2 rounded-lg bg-[#140c14] hover:bg-[#201020] border border-rose-900/60 text-rose-300 hover:text-white transition"
-              title="Dark Taboos: Blood Bonds & Diablerie"
-            >
-              <Skull className="w-4 h-4" />
-            </button>
-
-            {taboosDropdownOpen && (
-              <div 
-                className="absolute right-0 mt-2 w-48 bg-[#0e0810] border border-rose-900/60 rounded-xl p-1.5 shadow-2xl z-50 animate-fade-in font-cinzel text-xs"
-                onMouseLeave={() => setTaboosDropdownOpen(false)}
-              >
-                <button
-                  type="button"
-                  onClick={() => { if (onOpenBloodBond) onOpenBloodBond(); setTaboosDropdownOpen(false); }}
-                  className="w-full px-3 py-2 rounded-lg text-left text-neutral-200 hover:text-white hover:bg-rose-950/60 flex items-center gap-2 transition"
-                >
-                  <Link2 className="w-3.5 h-3.5 text-rose-400" />
-                  Blood Bonds & Torpor
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { if (onOpenDiablerie) onOpenDiablerie(); setTaboosDropdownOpen(false); }}
-                  className="w-full px-3 py-2 rounded-lg text-left text-red-300 hover:text-white hover:bg-red-950/80 flex items-center gap-2 transition"
-                >
-                  <Skull className="w-3.5 h-3.5 text-red-400" />
-                  The Amaranth (Diablerie)
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Blood Resonance Hunting Trigger */}
-          <button
-            type="button"
-            onClick={onOpenResonance}
-            className="p-2 rounded-lg bg-[#121218] hover:bg-[#1c1c24] border border-[#232330] text-rose-400 hover:text-rose-300 transition"
-            title="Blood Resonance & Vessel Hunting"
-          >
-            <Droplet className="w-4 h-4 fill-rose-500/40" />
-          </button>
-
-          {/* Atmospheric Ambience */}
-          <button
-            type="button"
-            onClick={onOpenSoundboard}
-            className="p-2 rounded-lg bg-[#121218] hover:bg-[#1c1c24] border border-[#232330] text-neutral-300 hover:text-rose-400 transition"
-            title="Atmosphere Soundboard"
-          >
-            <Volume2 className="w-4 h-4" />
-          </button>
-
           {/* Quick Dice Roller */}
           <button
             type="button"
             onClick={onOpenDice}
-            className="p-2 rounded-lg bg-rose-950/70 hover:bg-rose-900 border border-rose-800 text-rose-300 shadow-[0_0_10px_rgba(225,29,72,0.3)] transition"
+            className="p-2 rounded-lg bg-rose-950/70 hover:bg-rose-900 border border-rose-800 text-rose-300 shadow-[0_0_8px_rgba(225,29,72,0.3)] transition cursor-pointer"
             title="Quick Dice Roller"
           >
             <Dices className="w-4 h-4" />
           </button>
 
-          {/* Command Palette Trigger */}
-          <button
-            type="button"
-            onClick={onOpenCommandPalette}
-            className="hidden xl:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#121218] hover:bg-[#1a1a24] border border-[#232330] text-xs text-neutral-400 hover:text-neutral-200 transition"
-            title="Command Palette (Ctrl+K)"
-          >
-            <Search className="w-3.5 h-3.5" />
-            <span className="font-mono text-[10px] bg-neutral-900 px-1 py-0.5 rounded border border-neutral-700 text-neutral-400">
-              Ctrl+K
-            </span>
-          </button>
+          {/* Storyteller Arsenal Dropdown (Dark Taboos, Resonance, Soundboard, Command Palette) */}
+          <div className="relative" ref={arsenalRef}>
+            <button
+              type="button"
+              onClick={() => { setArsenalOpen(!arsenalOpen); setSystemOpen(false); }}
+              className={`p-2 rounded-lg border flex items-center gap-1 transition cursor-pointer ${
+                arsenalOpen 
+                  ? 'bg-rose-950/60 border-rose-700 text-rose-200' 
+                  : 'bg-[#121218] hover:bg-[#1a1a24] border-[#242434] text-neutral-300 hover:text-white'
+              }`}
+              title="Storyteller Arsenal & Auxiliary Tools"
+            >
+              <Sparkles className="w-4 h-4 text-amber-400" />
+              <ChevronDown className="w-3 h-3 text-neutral-400 hidden sm:block" />
+            </button>
 
-          {/* Edition Toggle */}
-          <div className="flex bg-[#121218] border border-[#232330] rounded-lg p-0.5 text-xs font-mono">
-            <button
-              type="button"
-              onClick={() => onToggleEdition('v5')}
-              className={`px-2 py-1 rounded font-bold transition ${
-                edition === 'v5' 
-                  ? 'bg-rose-900 text-white shadow-sm' 
-                  : 'text-neutral-400 hover:text-white'
-              }`}
-              title="Vampire: The Masquerade 5th Edition"
-            >
-              V5
-            </button>
-            <button
-              type="button"
-              onClick={() => onToggleEdition('v20')}
-              className={`px-2 py-1 rounded font-bold transition ${
-                edition === 'v20' 
-                  ? 'bg-rose-900 text-white shadow-sm' 
-                  : 'text-neutral-400 hover:text-white'
-              }`}
-              title="Vampire: The Masquerade 20th Anniversary Edition"
-            >
-              V20
-            </button>
+            {arsenalOpen && (
+              <div 
+                className="absolute right-0 mt-2 w-56 bg-[#0e0a12] border border-rose-900/60 rounded-xl p-1.5 shadow-2xl z-50 animate-fade-in font-cinzel text-xs"
+              >
+                <div className="px-3 py-1.5 text-[10px] font-mono text-neutral-500 uppercase border-b border-[#201524] mb-1">
+                  STORYTELLER ARSENAL
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => { if (onOpenBloodBond) onOpenBloodBond(); setArsenalOpen(false); }}
+                  className="w-full px-3 py-2 rounded-lg text-left text-neutral-200 hover:text-white hover:bg-rose-950/60 flex items-center gap-2 transition cursor-pointer"
+                >
+                  <Link2 className="w-3.5 h-3.5 text-rose-400" />
+                  Blood Bonds & Torpor
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => { if (onOpenDiablerie) onOpenDiablerie(); setArsenalOpen(false); }}
+                  className="w-full px-3 py-2 rounded-lg text-left text-red-300 hover:text-white hover:bg-red-950/80 flex items-center gap-2 transition cursor-pointer"
+                >
+                  <Skull className="w-3.5 h-3.5 text-red-400" />
+                  The Amaranth (Diablerie)
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => { onOpenResonance(); setArsenalOpen(false); }}
+                  className="w-full px-3 py-2 rounded-lg text-left text-neutral-200 hover:text-white hover:bg-[#1c1424] flex items-center gap-2 transition cursor-pointer"
+                >
+                  <Droplet className="w-3.5 h-3.5 text-rose-400" />
+                  Blood Resonance & Hunting
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => { onOpenSoundboard(); setArsenalOpen(false); }}
+                  className="w-full px-3 py-2 rounded-lg text-left text-neutral-200 hover:text-white hover:bg-[#1c1424] flex items-center gap-2 transition cursor-pointer"
+                >
+                  <Volume2 className="w-3.5 h-3.5 text-neutral-400" />
+                  Atmosphere Soundboard
+                </button>
+
+                <div className="pt-1 mt-1 border-t border-[#201524]">
+                  <button
+                    type="button"
+                    onClick={() => { onOpenCommandPalette(); setArsenalOpen(false); }}
+                    className="w-full px-3 py-2 rounded-lg text-left text-neutral-400 hover:text-white hover:bg-[#1c1424] flex items-center justify-between transition cursor-pointer"
+                  >
+                    <span className="flex items-center gap-2">
+                      <Search className="w-3.5 h-3.5" />
+                      Command Palette
+                    </span>
+                    <span className="font-mono text-[9px] bg-black/60 px-1 py-0.5 rounded border border-neutral-700">Ctrl+K</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Backup / Export */}
-          <button
-            type="button"
-            onClick={onExportBackup}
-            className="hidden sm:flex p-2 rounded-lg bg-[#121218] hover:bg-[#1a1a24] border border-[#232330] text-neutral-400 hover:text-white transition"
-            title="Export Full Campaign Backup (JSON)"
-          >
-            <Download className="w-3.5 h-3.5" />
-          </button>
+          {/* System & Settings Menu */}
+          <div className="relative" ref={systemRef}>
+            <button
+              type="button"
+              onClick={() => { setSystemOpen(!systemOpen); setArsenalOpen(false); }}
+              className={`p-2 rounded-lg border transition cursor-pointer ${
+                systemOpen 
+                  ? 'bg-neutral-800 border-neutral-600 text-white' 
+                  : 'bg-[#121218] hover:bg-[#1a1a24] border-[#242434] text-neutral-400 hover:text-white'
+              }`}
+              title="System Settings, Rules & Backups"
+            >
+              <Settings className="w-4 h-4" />
+            </button>
 
-          {/* Mobile Menu Button */}
+            {systemOpen && (
+              <div 
+                className="absolute right-0 mt-2 w-52 bg-[#0d0d14] border border-[#26263a] rounded-xl p-2 shadow-2xl z-50 animate-fade-in font-sans text-xs"
+              >
+                <div className="px-2 py-1 text-[10px] font-mono text-neutral-400 uppercase border-b border-[#1c1c28] mb-2 font-bold">
+                  RULES EDITION & CAMPAIGN
+                </div>
+
+                {/* Edition Switcher */}
+                <div className="flex bg-[#14141e] border border-[#272738] rounded-lg p-1 text-xs font-mono mb-2">
+                  <button
+                    type="button"
+                    onClick={() => onToggleEdition('v5')}
+                    className={`flex-1 py-1 text-center rounded font-bold cursor-pointer transition ${
+                      edition === 'v5' 
+                        ? 'bg-rose-900 text-white shadow-sm' 
+                        : 'text-neutral-400 hover:text-white'
+                    }`}
+                  >
+                    V5 (5th Ed)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onToggleEdition('v20')}
+                    className={`flex-1 py-1 text-center rounded font-bold cursor-pointer transition ${
+                      edition === 'v20' 
+                        ? 'bg-rose-900 text-white shadow-sm' 
+                        : 'text-neutral-400 hover:text-white'
+                    }`}
+                  >
+                    V20 (20th)
+                  </button>
+                </div>
+
+                {/* Backup & Restore */}
+                <button
+                  type="button"
+                  onClick={() => { onExportBackup(); setSystemOpen(false); }}
+                  className="w-full px-2.5 py-1.5 rounded-lg text-left text-neutral-300 hover:text-white hover:bg-[#1b1b28] flex items-center gap-2 transition cursor-pointer mb-1"
+                >
+                  <Download className="w-3.5 h-3.5 text-neutral-400" />
+                  Export Campaign Backup
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { onImportBackup(); setSystemOpen(false); }}
+                  className="w-full px-2.5 py-1.5 rounded-lg text-left text-neutral-300 hover:text-white hover:bg-[#1b1b28] flex items-center gap-2 transition cursor-pointer"
+                >
+                  <Upload className="w-3.5 h-3.5 text-neutral-400" />
+                  Restore from JSON
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Mobile Hamburger Button */}
           <button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 rounded-lg bg-[#121218] border border-[#232330] text-neutral-300"
+            className="lg:hidden p-2 rounded-lg bg-[#121218] border border-[#242434] text-neutral-300 cursor-pointer"
+            aria-label="Toggle navigation menu"
           >
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
         </div>
       </div>
 
-      {/* Mobile Nav Dropdown */}
+      {/* Mobile Navigation Dropdown */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-[#0a0a0e] border-b border-[#20202c] px-4 py-3 space-y-1.5 animate-fade-in">
+        <div className="lg:hidden bg-[#0a0a0f] border-b border-[#20202c] px-4 py-3 space-y-1.5 animate-fade-in shadow-2xl">
           {primaryNavItems.map(item => {
             const Icon = item.icon;
             const isActive = currentView === item.id;
@@ -286,14 +342,16 @@ export const Navigation: React.FC<NavigationProps> = ({
                 type="button"
                 onClick={() => handleNavClick(item.id)}
                 className={`
-                  w-full px-3 py-2 rounded-lg text-sm font-cinzel font-semibold tracking-wider flex items-center gap-2.5 text-left transition
+                  w-full px-3 py-2.5 rounded-lg text-xs font-cinzel font-semibold tracking-wider flex items-center gap-2.5 text-left transition cursor-pointer
                   ${isActive 
-                    ? 'bg-rose-950/70 border border-rose-800 text-rose-300' 
+                    ? item.isSpecial 
+                      ? 'bg-amber-950/70 border border-amber-600 text-amber-200' 
+                      : 'bg-rose-950/70 border border-rose-800 text-rose-200'
                     : 'text-neutral-400 hover:text-white hover:bg-[#14141c]'}
                 `}
               >
                 <Icon className={`w-4 h-4 ${item.isSpecial ? 'text-amber-400' : 'text-rose-500'}`} />
-                {item.label}
+                <span>{item.label}</span>
               </button>
             );
           })}
@@ -303,33 +361,15 @@ export const Navigation: React.FC<NavigationProps> = ({
               <button
                 type="button"
                 onClick={() => { onOpenCombat(); setMobileMenuOpen(false); }}
-                className="flex items-center gap-1 py-1.5 px-2.5 rounded bg-red-950/60 border border-red-800 text-red-200"
+                className="flex items-center gap-1.5 py-1.5 px-3 rounded-lg bg-red-950/70 border border-red-800 text-red-200 cursor-pointer"
               >
                 <Swords className="w-3.5 h-3.5 text-red-400" /> Combat
-              </button>
-            )}
-            {onOpenBloodBond && (
-              <button
-                type="button"
-                onClick={() => { onOpenBloodBond(); setMobileMenuOpen(false); }}
-                className="flex items-center gap-1 py-1.5 px-2.5 rounded bg-[#160c14] border border-rose-900 text-rose-300"
-              >
-                <Link2 className="w-3.5 h-3.5" /> Bonds
-              </button>
-            )}
-            {onOpenDiablerie && (
-              <button
-                type="button"
-                onClick={() => { onOpenDiablerie(); setMobileMenuOpen(false); }}
-                className="flex items-center gap-1 py-1.5 px-2.5 rounded bg-neutral-900 border border-neutral-700 text-neutral-300"
-              >
-                <Skull className="w-3.5 h-3.5 text-neutral-400" /> Diablerie
               </button>
             )}
             <button
               type="button"
               onClick={() => { onExportBackup(); setMobileMenuOpen(false); }}
-              className="flex items-center gap-1.5 py-1.5 px-2.5 rounded bg-[#161622]"
+              className="flex items-center gap-1.5 py-1.5 px-3 rounded-lg bg-[#161622] text-neutral-300 cursor-pointer"
             >
               <Download className="w-3.5 h-3.5" /> Backup
             </button>

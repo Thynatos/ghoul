@@ -128,7 +128,7 @@ export const ChronicleManager: React.FC<ChronicleManagerProps> = ({
       </div>
 
       {/* Tabs Switcher Navigation */}
-      <div className="flex items-center gap-1 bg-[#0c0c11] border border-[#20202c] p-1.5 rounded-xl overflow-x-auto">
+      <div className="flex items-center gap-1 bg-[#0c0c11] border border-[#20202c] p-1.5 rounded-xl overflow-x-auto no-scrollbar">
         {tabs.map(tab => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;

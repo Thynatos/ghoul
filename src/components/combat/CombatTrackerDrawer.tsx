@@ -349,6 +349,54 @@ export const CombatTrackerDrawer: React.FC<CombatTrackerDrawerProps> = ({
     });
   };
 
+  // Storyteller Mass Combat Utilities
+  const handleMassRouseCheck = () => {
+    if (!activeEncounter || activeEncounter.combatants.length === 0) return;
+    soundEngine.playDiceRoll();
+    let fails = 0;
+    activeEncounter.combatants.forEach(c => {
+      if (c.type === 'pc' || c.clan) {
+        const roll = Math.floor(Math.random() * 10) + 1;
+        if (roll < 6) fails++;
+      }
+    });
+
+    if (fails > 0) {
+      soundEngine.playRouseFail();
+      if (onShowToast) onShowToast('Mass Rouse Check', `${fails} Kindred failed Rouse Check (Hunger increased).`, 'blood');
+    } else {
+      soundEngine.playRouseSuccess();
+      if (onShowToast) onShowToast('Mass Rouse Check', 'All Kindred preserved their blood reserves!', 'success');
+    }
+  };
+
+  const handleApplyHazardToAll = (type: 'fire' | 'sunlight' | 'darkness') => {
+    if (!activeEncounter || activeEncounter.combatants.length === 0) return;
+    if (type === 'fire') {
+      soundEngine.playFrenzyRoar();
+      activeEncounter.combatants.forEach(c => {
+        handleApplyDamage(c.id, 'aggravated', 2);
+      });
+      if (onShowToast) onShowToast('Roaring Fire Hazard', 'All combatants sustained 2 Aggravated fire wounds!', 'error');
+    } else if (type === 'sunlight') {
+      soundEngine.playFrenzyRoar();
+      activeEncounter.combatants.forEach(c => {
+        if (c.type === 'pc' || c.clan) {
+          handleApplyDamage(c.id, 'aggravated', 3);
+        }
+      });
+      if (onShowToast) onShowToast('Sunlight Breach', 'All Kindred took 3 Aggravated wounds!', 'error');
+    } else if (type === 'darkness') {
+      soundEngine.playCombatHit();
+      activeEncounter.combatants.forEach(c => {
+        if (!c.statusEffects.includes('Blind / Obfuscated')) {
+          handleToggleStatus(c.id, 'Blind / Obfuscated');
+        }
+      });
+      if (onShowToast) onShowToast('Pitch Black / Smoke', 'Vision obscured (-2 to actions).', 'info');
+    }
+  };
+
   // Add PC to Encounter
   const handleAddCharacterToCombat = (char: Character) => {
     if (!activeEncounter) return;
@@ -603,6 +651,46 @@ export const CombatTrackerDrawer: React.FC<CombatTrackerDrawerProps> = ({
               Add Combatant
             </button>
           </div>
+        </div>
+
+        {/* Storyteller Mass Action Strip */}
+        <div className="px-6 py-2 bg-[#0c0c12] border-b border-[#1b1b26] flex flex-wrap items-center justify-between gap-2 text-xs">
+          <div className="flex items-center gap-1.5 font-mono text-[11px] text-neutral-400">
+            <span className="text-amber-400 font-cinzel font-bold">ST TOOLS:</span>
+            <button
+              type="button"
+              onClick={handleMassRouseCheck}
+              className="px-2 py-0.5 rounded bg-rose-950/60 hover:bg-rose-900 border border-rose-800 text-rose-300 font-mono text-[10px] transition"
+            >
+              Mass Rouse Check
+            </button>
+            <button
+              type="button"
+              onClick={() => handleApplyHazardToAll('fire')}
+              className="px-2 py-0.5 rounded bg-amber-950/60 hover:bg-amber-900 border border-amber-800 text-amber-300 font-mono text-[10px] flex items-center gap-1 transition"
+            >
+              <Flame className="w-3 h-3 text-amber-400" />
+              Ignite Fire
+            </button>
+            <button
+              type="button"
+              onClick={() => handleApplyHazardToAll('sunlight')}
+              className="px-2 py-0.5 rounded bg-red-950/80 hover:bg-red-900 border border-red-700 text-red-200 font-mono text-[10px] transition"
+            >
+              Sunlight Burst
+            </button>
+            <button
+              type="button"
+              onClick={() => handleApplyHazardToAll('darkness')}
+              className="px-2 py-0.5 rounded bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-neutral-300 font-mono text-[10px] transition"
+            >
+              Darkness / Smoke
+            </button>
+          </div>
+
+          <span className="text-[10px] font-mono text-neutral-500">
+            {activeEncounter?.combatants?.length || 0} Combatants Engaged
+          </span>
         </div>
 
         {/* Main Content Area */}

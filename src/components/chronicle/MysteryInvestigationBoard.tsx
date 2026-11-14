@@ -9,6 +9,7 @@ import {
   FileText, 
   AlertCircle, 
   Lock, 
+  Unlock,
   MapPin, 
   User, 
   Skull, 
@@ -17,12 +18,16 @@ import {
   Sparkles, 
   X, 
   Check, 
-  Edit3,
+  Edit3, 
+  FolderOpen,
+  Filter,
+  Layers,
   HelpCircle,
-  FolderOpen
+  Tag
 } from 'lucide-react';
 import { MysteryBoard, MysteryLink, MysteryNode, MysteryNodeType, MysteryNodeStatus } from '../../types/investigation';
 import { storageService } from '../../services/storage';
+import { soundEngine } from '../../services/soundEngine';
 
 interface MysteryInvestigationBoardProps {
   onShowToast?: (title: string, desc?: string, type?: 'info' | 'blood' | 'success' | 'error') => void;
@@ -40,10 +45,14 @@ export const MysteryInvestigationBoard: React.FC<MysteryInvestigationBoardProps>
   // Selected Node / Inspector
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
 
+  // Search & Filters
+  const [filterType, setFilterType] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+
   // Modals
   const [addNodeModalOpen, setAddNodeModalOpen] = useState(false);
   const [addLinkModalOpen, setAddLinkModalOpen] = useState(false);
-  const [isEditingBoardInfo, setIsEditingBoardInfo] = useState(false);
+  const [isEditingNode, setIsEditingNode] = useState(false);
 
   // Node Creation State
   const [newNodeType, setNewNodeType] = useState<MysteryNodeType>('clue');
@@ -52,6 +61,12 @@ export const MysteryInvestigationBoard: React.FC<MysteryInvestigationBoardProps>
   const [newNodeStatus, setNewNodeStatus] = useState<MysteryNodeStatus>('discovered');
   const [newNodeSecretNotes, setNewNodeSecretNotes] = useState('');
   const [newNodeIsSecret, setNewNodeIsSecret] = useState(false);
+
+  // Node Edit State
+  const [editTitle, setEditTitle] = useState('');
+  const [editDesc, setEditDesc] = useState('');
+  const [editSecretNotes, setEditSecretNotes] = useState('');
+  const [editStatus, setEditStatus] = useState<MysteryNodeStatus>('discovered');
 
   // Link Creation State
   const [linkSourceId, setLinkSourceId] = useState('');
@@ -84,15 +99,15 @@ export const MysteryInvestigationBoard: React.FC<MysteryInvestigationBoardProps>
       chronicleId: storageService.getActiveChronicleId() || 'chronicle_chicago_1',
       title: `Case File #${boards.length + 101}`,
       caseNumber: `CPD-CASE-${Math.floor(Math.random() * 9000 + 1000)}`,
-      briefing: 'Active homicide and Masquerade breach investigation.',
+      briefing: 'New homicide and Masquerade breach investigation opened by the Sheriff.',
       isSolved: false,
       nodes: [
         {
-          id: 'n_initial_scene',
+          id: 'n_initial_scene_' + Date.now(),
           type: 'crime_scene',
           title: 'Initial Crime Scene',
-          description: 'Alleyway or secure haven where the incident unfolded.',
-          x: 120,
+          description: 'Secure haven or abandoned warehouse where the breach took place.',
+          x: 140,
           y: 100,
           status: 'discovered',
           color: '#e11d48'
@@ -111,7 +126,7 @@ export const MysteryInvestigationBoard: React.FC<MysteryInvestigationBoardProps>
 
   // Node Drag Handlers
   const handleMouseDown = (e: React.MouseEvent, nodeId: string) => {
-    if (e.button !== 0) return; // Only left click
+    if (e.button !== 0) return;
     const node = activeBoard?.nodes.find(n => n.id === nodeId);
     if (!node || !boardRef.current) return;
 
@@ -122,14 +137,15 @@ export const MysteryInvestigationBoard: React.FC<MysteryInvestigationBoardProps>
       y: e.clientY - (boardRect.top + node.y)
     });
     setSelectedNodeId(nodeId);
+    setIsEditingNode(false);
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!draggingNodeId || !activeBoard || !boardRef.current) return;
 
     const boardRect = boardRef.current.getBoundingClientRect();
-    const newX = Math.max(20, Math.min(boardRect.width - 220, e.clientX - boardRect.left - dragOffset.x));
-    const newY = Math.max(20, Math.min(boardRect.height - 180, e.clientY - boardRect.top - dragOffset.y));
+    const newX = Math.max(20, Math.min(boardRect.width - 240, e.clientX - boardRect.left - dragOffset.x));
+    const newY = Math.max(20, Math.min(boardRect.height - 200, e.clientY - boardRect.top - dragOffset.y));
 
     const updatedNodes = activeBoard.nodes.map(n => {
       if (n.id === draggingNodeId) {
@@ -138,7 +154,6 @@ export const MysteryInvestigationBoard: React.FC<MysteryInvestigationBoardProps>
       return n;
     });
 
-    // Directly update local state for smooth drag
     const updatedBoard = { ...activeBoard, nodes: updatedNodes };
     const list = boards.map(b => b.id === activeBoard.id ? updatedBoard : b);
     setBoards(list);
@@ -170,8 +185,8 @@ export const MysteryInvestigationBoard: React.FC<MysteryInvestigationBoardProps>
       type: newNodeType,
       title: newNodeTitle.trim(),
       description: newNodeDesc.trim(),
-      x: 250 + Math.floor(Math.random() * 100),
-      y: 150 + Math.floor(Math.random() * 100),
+      x: 200 + Math.floor(Math.random() * 200),
+      y: 120 + Math.floor(Math.random() * 150),
       status: newNodeStatus,
       secretNotes: newNodeSecretNotes.trim(),
       isSecret: newNodeIsSecret,
@@ -190,7 +205,60 @@ export const MysteryInvestigationBoard: React.FC<MysteryInvestigationBoardProps>
     setNewNodeIsSecret(false);
     setAddNodeModalOpen(false);
     setSelectedNodeId(newNode.id);
-    if (onShowToast) onShowToast('Pin Pinned to Board', `${newNode.title} recorded.`, 'info');
+    if (onShowToast) onShowToast('Pin Added', `${newNode.title} mounted to board.`, 'info');
+  };
+
+  // Toggle Secret / Reveal to Players
+  const handleToggleSecretNode = (nodeId: string) => {
+    if (!activeBoard) return;
+    const node = activeBoard.nodes.find(n => n.id === nodeId);
+    if (!node) return;
+
+    const willBeSecret = !node.isSecret;
+    const updatedNodes = activeBoard.nodes.map(n => {
+      if (n.id === nodeId) {
+        return { ...n, isSecret: willBeSecret };
+      }
+      return n;
+    });
+
+    saveBoard({ ...activeBoard, nodes: updatedNodes });
+    if (onShowToast) {
+      onShowToast(
+        willBeSecret ? 'Concealed from Players' : 'Revealed to Players',
+        `${node.title} is now ${willBeSecret ? 'hidden on player screens' : 'visible on player screens'}.`,
+        'blood'
+      );
+    }
+  };
+
+  // Edit Node
+  const handleStartEditNode = (node: MysteryNode) => {
+    setEditTitle(node.title);
+    setEditDesc(node.description);
+    setEditSecretNotes(node.secretNotes || '');
+    setEditStatus(node.status);
+    setIsEditingNode(true);
+  };
+
+  const handleSaveEditNode = () => {
+    if (!activeBoard || !selectedNodeId) return;
+    const updatedNodes = activeBoard.nodes.map(n => {
+      if (n.id === selectedNodeId) {
+        return {
+          ...n,
+          title: editTitle.trim() || n.title,
+          description: editDesc.trim() || n.description,
+          secretNotes: editSecretNotes.trim(),
+          status: editStatus
+        };
+      }
+      return n;
+    });
+
+    saveBoard({ ...activeBoard, nodes: updatedNodes });
+    setIsEditingNode(false);
+    if (onShowToast) onShowToast('Evidence Updated', 'Details saved.', 'success');
   };
 
   // Delete Node
@@ -211,6 +279,7 @@ export const MysteryInvestigationBoard: React.FC<MysteryInvestigationBoardProps>
     e.preventDefault();
     if (!activeBoard || !linkSourceId || !linkTargetId || linkSourceId === linkTargetId) return;
 
+    soundEngine.playHeartbeat();
     const newLink: MysteryLink = {
       id: 'link_' + Date.now(),
       sourceId: linkSourceId,
@@ -228,7 +297,7 @@ export const MysteryInvestigationBoard: React.FC<MysteryInvestigationBoardProps>
     setLinkLabel('');
     setLinkIsSecret(false);
     setAddLinkModalOpen(false);
-    if (onShowToast) onShowToast('Red Thread Strung', 'Connection linked between pins.', 'blood');
+    if (onShowToast) onShowToast('Red Thread Strung', 'Connection linked between evidence.', 'blood');
   };
 
   // Delete Link
@@ -240,21 +309,28 @@ export const MysteryInvestigationBoard: React.FC<MysteryInvestigationBoardProps>
     });
   };
 
-  // Filter visible nodes & links based on Player View vs Storyteller Mode
+  // Filter visible nodes based on Player View vs Storyteller Mode + category filters
   const visibleNodes = (activeBoard?.nodes || []).filter(node => {
-    if (isStorytellerMode) return true;
-    return !node.isSecret; // Hide secret nodes in Player View
+    if (!isStorytellerMode && node.isSecret) return false;
+    if (filterType !== 'all' && node.type !== filterType) return false;
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      const matchTitle = node.title.toLowerCase().includes(q);
+      const matchDesc = node.description.toLowerCase().includes(q);
+      const matchSecret = isStorytellerMode && (node.secretNotes || '').toLowerCase().includes(q);
+      return matchTitle || matchDesc || matchSecret;
+    }
+    return true;
   });
 
   const visibleLinks = (activeBoard?.links || []).filter(link => {
-    if (isStorytellerMode) return true;
-    if (link.isSecret) return false;
-    // Both endpoints must also be visible
+    if (!isStorytellerMode && link.isSecret) return false;
     const hasSource = visibleNodes.some(n => n.id === link.sourceId);
     const hasTarget = visibleNodes.some(n => n.id === link.targetId);
     return hasSource && hasTarget;
   });
 
+  const hiddenCount = (activeBoard?.nodes || []).filter(n => n.isSecret).length;
   const selectedNode = activeBoard?.nodes.find(n => n.id === selectedNodeId);
 
   const getNodeIcon = (type: MysteryNodeType) => {
@@ -274,25 +350,25 @@ export const MysteryInvestigationBoard: React.FC<MysteryInvestigationBoardProps>
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6 animate-fade-in">
       
-      {/* Top Bar: Case Switcher, Mode Toggle & Controls */}
-      <div className="flex flex-wrap items-center justify-between gap-4 bg-[#09080d] border border-[#1e1a26] p-4 rounded-xl">
+      {/* Top Header Card: Case File, View Mode, Controls */}
+      <div className="bg-[#0b080e] border border-[#221424] p-5 rounded-2xl shadow-2xl flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-lg bg-rose-950/80 border border-rose-800 text-rose-300 shadow-[0_0_15px_rgba(225,29,72,0.4)]">
+          <div className="p-3 rounded-xl bg-gradient-to-br from-rose-950 to-red-950 border border-rose-800 text-rose-300 shadow-[0_0_15px_rgba(225,29,72,0.4)]">
             <Search className="w-6 h-6" />
           </div>
           <div>
             <div className="flex items-center gap-2">
               <span className="text-[10px] font-mono uppercase tracking-widest text-neutral-400">
-                CASE DOSSIER // RED STRING BOARD
+                ACTIVE CASE FILE
               </span>
-              <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-neutral-900 border border-neutral-700 text-neutral-300">
+              <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-neutral-900 border border-neutral-700 text-rose-300 font-bold">
                 {activeBoard.caseNumber}
               </span>
             </div>
             <select
               value={activeBoard.id}
               onChange={e => setActiveBoardId(e.target.value)}
-              className="bg-transparent font-cinzel text-lg font-bold text-white focus:outline-none cursor-pointer"
+              className="bg-transparent font-cinzel text-xl font-black text-white focus:outline-none cursor-pointer mt-0.5"
             >
               {boards.map(b => (
                 <option key={b.id} value={b.id} className="bg-[#100c14] text-white">
@@ -303,18 +379,19 @@ export const MysteryInvestigationBoard: React.FC<MysteryInvestigationBoardProps>
           </div>
         </div>
 
-        {/* View Mode Toggle: STORYTELLER vs PLAYER PROJECTION */}
-        <div className="flex items-center gap-3">
-          <div className="flex bg-[#120f18] border border-[#242030] rounded-lg p-0.5 text-xs font-mono">
+        {/* View Mode & Actions */}
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Mode Selector */}
+          <div className="flex bg-[#120e18] border border-[#26162c] rounded-xl p-1 text-xs font-mono">
             <button
               type="button"
               onClick={() => setIsStorytellerMode(true)}
-              className={`px-3 py-1.5 rounded font-bold flex items-center gap-1.5 transition ${
+              className={`px-3 py-1.5 rounded-lg font-bold flex items-center gap-1.5 transition ${
                 isStorytellerMode
-                  ? 'bg-rose-900 text-white shadow-[0_0_10px_rgba(225,29,72,0.4)]'
+                  ? 'bg-gradient-to-r from-red-800 to-rose-900 text-white shadow-[0_0_12px_rgba(225,29,72,0.4)]'
                   : 'text-neutral-400 hover:text-white'
               }`}
-              title="Full Storyteller Mode: reveals secret conspirators, dark motives, and hidden links"
+              title="Storyteller Screen (Full access to secret conspirators and occult evidence)"
             >
               <Eye className="w-3.5 h-3.5" />
               Storyteller Screen
@@ -322,12 +399,12 @@ export const MysteryInvestigationBoard: React.FC<MysteryInvestigationBoardProps>
             <button
               type="button"
               onClick={() => setIsStorytellerMode(false)}
-              className={`px-3 py-1.5 rounded font-bold flex items-center gap-1.5 transition ${
+              className={`px-3 py-1.5 rounded-lg font-bold flex items-center gap-1.5 transition ${
                 !isStorytellerMode
-                  ? 'bg-blue-900 text-white shadow-[0_0_10px_rgba(59,130,246,0.4)]'
+                  ? 'bg-blue-900 text-white shadow-[0_0_12px_rgba(59,130,246,0.4)]'
                   : 'text-neutral-400 hover:text-white'
               }`}
-              title="Player View: Redacts secret conspirators, spoilers, and unrevealed connections for TV/screen sharing"
+              title="Player View (Spoilers and secret conspirators safely redacted for screen projection)"
             >
               <EyeOff className="w-3.5 h-3.5" />
               Player View (Redacted)
@@ -338,7 +415,7 @@ export const MysteryInvestigationBoard: React.FC<MysteryInvestigationBoardProps>
             <button
               type="button"
               onClick={() => setAddNodeModalOpen(true)}
-              className="px-3 py-1.5 rounded-lg bg-rose-950/70 hover:bg-rose-900 border border-rose-800 text-xs font-cinzel text-rose-200 hover:text-white flex items-center gap-1.5 transition"
+              className="px-3.5 py-2 rounded-xl bg-rose-950/80 hover:bg-rose-900 border border-rose-800 text-xs font-cinzel text-rose-200 hover:text-white flex items-center gap-1.5 transition shadow-[0_0_10px_rgba(225,29,72,0.3)]"
             >
               <Plus className="w-3.5 h-3.5" />
               Add Pin
@@ -347,16 +424,16 @@ export const MysteryInvestigationBoard: React.FC<MysteryInvestigationBoardProps>
               type="button"
               onClick={() => setAddLinkModalOpen(true)}
               disabled={activeBoard.nodes.length < 2}
-              className="px-3 py-1.5 rounded-lg bg-[#15121e] hover:bg-[#201c2c] border border-[#272336] disabled:opacity-40 text-xs font-cinzel text-neutral-200 hover:text-white flex items-center gap-1.5 transition"
+              className="px-3.5 py-2 rounded-xl bg-[#160f1c] hover:bg-[#23172c] border border-[#2b1836] disabled:opacity-40 text-xs font-cinzel text-neutral-200 hover:text-white flex items-center gap-1.5 transition"
             >
               <Link2 className="w-3.5 h-3.5 text-rose-400" />
-              Connect String
+              Tie Thread
             </button>
             <button
               type="button"
               onClick={handleCreateNewBoard}
-              className="p-2 rounded-lg bg-[#15121e] hover:bg-[#201c2c] border border-[#272336] text-neutral-400 hover:text-white transition"
-              title="Open New Case Board"
+              className="p-2 rounded-xl bg-[#160f1c] hover:bg-[#23172c] border border-[#2b1836] text-neutral-400 hover:text-white transition"
+              title="New Case Dossier"
             >
               <FolderOpen className="w-4 h-4" />
             </button>
@@ -364,93 +441,131 @@ export const MysteryInvestigationBoard: React.FC<MysteryInvestigationBoardProps>
         </div>
       </div>
 
-      {/* Case Briefing & Mode Banner */}
-      <div className={`
-        p-3.5 rounded-xl border flex items-center justify-between gap-4 text-xs font-sans
-        ${isStorytellerMode 
-          ? 'bg-rose-950/20 border-rose-900/50 text-rose-300' 
-          : 'bg-blue-950/20 border-blue-900/50 text-blue-300'}
-      `}>
-        <div className="flex items-center gap-2.5">
-          <AlertCircle className="w-4 h-4 shrink-0" />
-          <div>
-            <span className="font-bold uppercase font-mono mr-2">
-              {isStorytellerMode ? 'STORYTELLER MODE (OMNISCIENT)' : 'PLAYER PROJECTION MODE (SPOILERS REDACTED)'}
-            </span>
-            <span className="text-neutral-300">{activeBoard.briefing}</span>
-          </div>
+      {/* Filter & Search Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-[#0d0912] border border-[#1f1224] p-3 rounded-xl text-xs">
+        {/* Category Pills */}
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="text-[10px] font-mono text-neutral-400 uppercase mr-1">Filter:</span>
+          {[
+            { id: 'all', label: 'All Evidence' },
+            { id: 'crime_scene', label: 'Crime Scenes' },
+            { id: 'victim', label: 'Victims' },
+            { id: 'suspect', label: 'Suspects' },
+            { id: 'autopsy', label: 'Autopsies' },
+            { id: 'clue', label: 'Clues' },
+            { id: 'evidence', label: 'Physical Evidence' },
+          ].map(f => (
+            <button
+              key={f.id}
+              type="button"
+              onClick={() => setFilterType(f.id)}
+              className={`
+                px-2.5 py-1 rounded-lg font-mono text-[11px] transition
+                ${filterType === f.id
+                  ? 'bg-rose-950 border border-rose-700 text-rose-200'
+                  : 'bg-[#140c18] border border-[#24132b] text-neutral-400 hover:text-neutral-200'}
+              `}
+            >
+              {f.label}
+            </button>
+          ))}
         </div>
-        <span className="text-[10px] font-mono shrink-0 hidden sm:block">
-          {visibleNodes.length} Pins • {visibleLinks.length} Connections Visible
-        </span>
+
+        {/* Quick Search */}
+        <div className="relative">
+          <Search className="w-3.5 h-3.5 text-neutral-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            placeholder="Search leads, suspects, runes..."
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            className="bg-[#140c18] border border-[#24132b] rounded-lg pl-8 pr-3 py-1 text-[11px] text-neutral-200 placeholder-neutral-500 focus:outline-none focus:border-rose-600 w-56"
+          />
+        </div>
       </div>
 
-      {/* CORKBOARD INVESTIGATION CANVAS */}
-      <div className="relative w-full rounded-2xl border-4 border-[#241a15] overflow-hidden shadow-2xl select-none">
+      {/* Storyteller classified watermark indicator */}
+      {!isStorytellerMode && (
+        <div className="p-3 rounded-xl bg-blue-950/30 border border-blue-800 text-blue-200 text-xs font-mono flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <EyeOff className="w-4 h-4 text-blue-400 shrink-0" />
+            <span>PLAYER PROJECTION ACTIVE — {hiddenCount} SECRET CONSPIRATOR(S) & CLASSIFIED MOTIVES REDACTED.</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsStorytellerMode(true)}
+            className="underline text-blue-300 hover:text-white"
+          >
+            Switch to Storyteller Screen
+          </button>
+        </div>
+      )}
+
+      {/* THE CORKBOARD CANVAS */}
+      <div className="relative w-full rounded-2xl border-4 border-[#241610] shadow-[0_20px_50px_rgba(0,0,0,0.9)] overflow-hidden select-none">
         
-        {/* Corkboard Background Texture */}
+        {/* Corkboard Texture Canvas */}
         <div 
           ref={boardRef}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
-          className="relative w-full h-[640px] bg-[#161210] overflow-hidden cursor-crosshair"
+          className="relative w-full h-[680px] bg-[#140f0c] overflow-hidden cursor-crosshair"
           style={{
             backgroundImage: `
-              radial-gradient(circle at 50% 50%, rgba(30, 20, 15, 0.9), rgba(10, 8, 7, 0.95)),
-              repeating-linear-gradient(0deg, rgba(255,255,255,0.015) 0px, rgba(255,255,255,0.015) 1px, transparent 1px, transparent 24px),
-              repeating-linear-gradient(90deg, rgba(255,255,255,0.015) 0px, rgba(255,255,255,0.015) 1px, transparent 1px, transparent 24px)
+              radial-gradient(circle at 50% 50%, rgba(35, 22, 16, 0.95), rgba(12, 8, 6, 0.98)),
+              repeating-linear-gradient(0deg, rgba(255,255,255,0.015) 0px, rgba(255,255,255,0.015) 1px, transparent 1px, transparent 28px),
+              repeating-linear-gradient(90deg, rgba(255,255,255,0.015) 0px, rgba(255,255,255,0.015) 1px, transparent 1px, transparent 28px)
             `
           }}
         >
-          {/* SVG Canvas for Red Strings */}
+          {/* Subtle woodgrain and shadow */}
+          <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/60 pointer-events-none" />
+
+          {/* SVG Canvas for Crimson Red Thread Lines */}
           <svg className="absolute inset-0 w-full h-full pointer-events-none z-10">
             {visibleLinks.map(link => {
               const sourceNode = activeBoard.nodes.find(n => n.id === link.sourceId);
               const targetNode = activeBoard.nodes.find(n => n.id === link.targetId);
               if (!sourceNode || !targetNode) return null;
 
-              // Node dimensions approx: 190w x 100h
-              const sx = sourceNode.x + 95;
-              const sy = sourceNode.y + 15; // Pin top center
-              const tx = targetNode.x + 95;
-              const ty = targetNode.y + 15;
-
-              // Midpoint for label
+              const sx = sourceNode.x + 105;
+              const sy = sourceNode.y + 14;
+              const tx = targetNode.x + 105;
+              const ty = targetNode.y + 14;
               const mx = (sx + tx) / 2;
               const my = (sy + ty) / 2;
 
               return (
                 <g key={link.id}>
-                  {/* Subtle drop shadow for 3D string feel */}
+                  {/* Cast shadow */}
                   <line
                     x1={sx}
                     y1={sy + 3}
                     x2={tx}
                     y2={ty + 3}
-                    stroke="rgba(0,0,0,0.6)"
-                    strokeWidth="3"
+                    stroke="rgba(0,0,0,0.7)"
+                    strokeWidth="3.5"
                   />
-                  {/* Main Crimson Red Thread */}
+                  {/* Crimson Thread */}
                   <line
                     x1={sx}
                     y1={sy}
                     x2={tx}
                     y2={ty}
-                    stroke={link.isSecret ? '#9333ea' : '#e11d48'}
+                    stroke={link.isSecret ? '#9333ea' : '#dc2626'}
                     strokeWidth={link.isSecret ? '2.5' : '2'}
                     strokeDasharray={link.isSecret ? '4 4' : 'none'}
-                    className="transition-all"
                   />
-                  {/* Small tag note on string */}
+                  {/* Taped label on red thread */}
                   {link.label && (
                     <foreignObject
-                      x={mx - 60}
-                      y={my - 12}
-                      width="120"
-                      height="26"
+                      x={mx - 65}
+                      y={my - 14}
+                      width="130"
+                      height="28"
                       className="overflow-visible"
                     >
-                      <div className="bg-[#12080d]/90 border border-red-900/60 text-[9px] font-mono text-red-200 px-1.5 py-0.5 rounded text-center truncate shadow">
+                      <div className="bg-[#18080f]/95 border border-red-800 text-[10px] font-mono text-red-200 px-2 py-0.5 rounded-md text-center truncate shadow-lg">
                         {link.label}
                       </div>
                     </foreignObject>
@@ -460,7 +575,7 @@ export const MysteryInvestigationBoard: React.FC<MysteryInvestigationBoardProps>
             })}
           </svg>
 
-          {/* Render Pins / Nodes */}
+          {/* Render Pushpin Cards */}
           {visibleNodes.map(node => {
             const isSelected = selectedNodeId === node.id;
             const Icon = getNodeIcon(node.type);
@@ -474,28 +589,34 @@ export const MysteryInvestigationBoard: React.FC<MysteryInvestigationBoardProps>
                   top: `${node.y}px`
                 }}
                 className={`
-                  absolute z-20 w-48 rounded-xl p-3 shadow-xl cursor-grab active:cursor-grabbing border transition-all
-                  ${isSelected ? 'ring-2 ring-rose-500 scale-105 z-30' : 'hover:scale-102'}
-                  ${node.isSecret ? 'bg-[#180918] border-purple-800/80 shadow-[0_0_15px_rgba(147,51,234,0.3)]' : 'bg-[#141018] border-[#292232]'}
+                  absolute z-20 w-52 rounded-xl p-3.5 shadow-2xl cursor-grab active:cursor-grabbing border transition-all
+                  ${isSelected ? 'ring-2 ring-rose-500 scale-105 z-30 shadow-[0_0_25px_rgba(225,29,72,0.4)]' : 'hover:scale-102'}
+                  ${node.isSecret 
+                    ? 'bg-[#180918] border-purple-800 shadow-[0_0_15px_rgba(147,51,234,0.3)]' 
+                    : 'bg-[#151016] border-[#291e2c]'}
                 `}
               >
-                {/* Visual Red Pushpin */}
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full bg-gradient-to-br from-red-500 to-red-900 border border-white/60 shadow-[0_2px_5px_rgba(0,0,0,0.8)] flex items-center justify-center">
-                  <div className="w-1.5 h-1.5 rounded-full bg-white/80" />
+                {/* Vintage Brass Pushpin Header */}
+                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 w-6 h-6 rounded-full bg-gradient-to-br from-red-600 via-rose-800 to-black border border-white/70 shadow-[0_3px_8px_rgba(0,0,0,0.9)] flex items-center justify-center">
+                  <div className="w-1.5 h-1.5 rounded-full bg-white/90" />
                 </div>
 
-                {/* Card Content */}
+                {/* Evidence Card Content */}
                 <div className="pt-2">
-                  <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center justify-between mb-1.5">
                     <span 
-                      className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded flex items-center gap-1"
-                      style={{ backgroundColor: `${node.color}25`, color: node.color }}
+                      className="text-[9px] font-mono font-bold uppercase px-2 py-0.5 rounded-full flex items-center gap-1 border"
+                      style={{ 
+                        backgroundColor: `${node.color}25`, 
+                        color: node.color,
+                        borderColor: `${node.color}50` 
+                      }}
                     >
                       <Icon className="w-2.5 h-2.5" />
                       {node.type.replace('_', ' ')}
                     </span>
                     {node.isSecret && (
-                      <span className="text-[9px] font-mono text-purple-300 flex items-center gap-0.5" title="Storyteller secret">
+                      <span className="text-[9px] font-mono text-purple-300 font-bold flex items-center gap-0.5">
                         <Lock className="w-2.5 h-2.5" />
                         SECRET
                       </span>
@@ -506,13 +627,13 @@ export const MysteryInvestigationBoard: React.FC<MysteryInvestigationBoardProps>
                     {node.title}
                   </h4>
 
-                  <p className="text-[10px] text-neutral-400 font-sans mt-1 line-clamp-2 leading-tight">
+                  <p className="text-[10px] text-neutral-300 font-sans mt-1 line-clamp-2 leading-relaxed">
                     {node.description}
                   </p>
 
-                  {/* Secret notes preview in Storyteller mode */}
+                  {/* Storyteller Secret Intel Strip */}
                   {isStorytellerMode && node.secretNotes && (
-                    <div className="mt-2 pt-1.5 border-t border-[#261e2e] text-[9px] text-amber-300 font-mono line-clamp-1 flex items-center gap-1">
+                    <div className="mt-2.5 pt-2 border-t border-[#251728] text-[9px] text-amber-300 font-mono line-clamp-1 flex items-center gap-1">
                       <Sparkles className="w-2.5 h-2.5 text-amber-400 shrink-0" />
                       {node.secretNotes}
                     </div>
@@ -526,20 +647,24 @@ export const MysteryInvestigationBoard: React.FC<MysteryInvestigationBoardProps>
 
       </div>
 
-      {/* SELECTED NODE INSPECTOR PANEL */}
+      {/* INSPECTOR & EVIDENCE DETAILS PANEL */}
       {selectedNode && (
-        <div className="bg-[#0b080f] border border-[#241c2c] rounded-xl p-5 text-xs font-sans animate-fade-in space-y-4">
-          <div className="flex items-start justify-between">
+        <div className="bg-[#0b080e] border border-[#221424] rounded-2xl p-6 text-xs font-sans animate-fade-in space-y-4 shadow-2xl">
+          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-4 border-b border-[#1b101c]">
             <div className="flex items-center gap-3">
               <div 
-                className="p-2 rounded-lg"
-                style={{ backgroundColor: `${selectedNode.color}25`, color: selectedNode.color }}
+                className="p-3 rounded-xl border"
+                style={{ 
+                  backgroundColor: `${selectedNode.color}25`, 
+                  color: selectedNode.color,
+                  borderColor: `${selectedNode.color}60`
+                }}
               >
-                {React.createElement(getNodeIcon(selectedNode.type), { className: 'w-5 h-5' })}
+                {React.createElement(getNodeIcon(selectedNode.type), { className: 'w-6 h-6' })}
               </div>
               <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="font-cinzel text-base font-bold text-white">{selectedNode.title}</h3>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="font-cinzel text-lg font-bold text-white">{selectedNode.title}</h3>
                   <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-neutral-900 border border-neutral-700 text-neutral-300">
                     Status: {selectedNode.status}
                   </span>
@@ -554,69 +679,165 @@ export const MysteryInvestigationBoard: React.FC<MysteryInvestigationBoardProps>
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={() => handleDeleteNode(selectedNode.id)}
-              className="px-2.5 py-1 rounded bg-[#180f1a] hover:bg-red-950 border border-[#2b1a2d] hover:border-red-800 text-neutral-400 hover:text-red-300 transition flex items-center gap-1"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-              Remove Pin
-            </button>
+            {/* Storyteller Action Controls */}
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => handleToggleSecretNode(selectedNode.id)}
+                className={`px-3 py-1.5 rounded-lg border text-xs font-mono font-bold flex items-center gap-1.5 transition ${
+                  selectedNode.isSecret
+                    ? 'bg-purple-950 hover:bg-purple-900 border-purple-700 text-purple-200'
+                    : 'bg-[#150f1c] hover:bg-[#20152a] border-[#291836] text-neutral-300'
+                }`}
+                title="Toggle Player Visibility"
+              >
+                {selectedNode.isSecret ? <Eye className="w-3.5 h-3.5 text-purple-400" /> : <EyeOff className="w-3.5 h-3.5 text-neutral-400" />}
+                {selectedNode.isSecret ? 'Reveal to Players' : 'Hide from Players'}
+              </button>
+              
+              <button
+                type="button"
+                onClick={() => handleStartEditNode(selectedNode)}
+                className="px-3 py-1.5 rounded-lg bg-[#150f1c] hover:bg-[#20152a] border border-[#291836] text-neutral-300 hover:text-white flex items-center gap-1"
+              >
+                <Edit3 className="w-3.5 h-3.5" />
+                Edit
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleDeleteNode(selectedNode.id)}
+                className="p-2 rounded-lg bg-[#150f1c] hover:bg-red-950 border border-[#291836] hover:border-red-800 text-neutral-400 hover:text-red-300 transition"
+                title="Remove pin"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
           </div>
 
-          {/* Storyteller Secret Field */}
-          {selectedNode.secretNotes && (
-            <div className={`p-3 rounded-lg border text-xs font-mono leading-relaxed ${
-              isStorytellerMode
-                ? 'bg-amber-950/30 border-amber-800/80 text-amber-200'
-                : 'bg-neutral-950 border-neutral-800 text-neutral-600 italic select-none'
-            }`}>
-              <div className="flex items-center gap-1.5 font-bold mb-1 text-amber-300">
-                <Lock className="w-3.5 h-3.5" />
-                STORYTELLER CLASSIFIED INTEL:
+          {/* Edit Form if active */}
+          {isEditingNode ? (
+            <div className="p-4 bg-[#140c18] border border-[#25152a] rounded-xl space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[10px] text-neutral-400 font-mono block mb-1">Title</label>
+                  <input
+                    type="text"
+                    value={editTitle}
+                    onChange={e => setEditTitle(e.target.value)}
+                    className="w-full bg-[#0d0710] border border-[#221226] rounded px-3 py-1.5 text-white"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] text-neutral-400 font-mono block mb-1">Investigation Status</label>
+                  <select
+                    value={editStatus}
+                    onChange={e => setEditStatus(e.target.value as any)}
+                    className="w-full bg-[#0d0710] border border-[#221226] rounded px-3 py-1.5 text-white font-mono"
+                  >
+                    <option value="discovered">Discovered</option>
+                    <option value="unsolved">Unsolved</option>
+                    <option value="cleared">Cleared / Alibi Confirmed</option>
+                    <option value="hidden">Hidden / Concealed</option>
+                  </select>
+                </div>
               </div>
-              {isStorytellerMode ? selectedNode.secretNotes : '[CLASSIFIED EVIDENCE REDACTED FOR PLAYERS]'}
+
+              <div>
+                <label className="text-[10px] text-neutral-400 font-mono block mb-1">Public Description</label>
+                <textarea
+                  rows={2}
+                  value={editDesc}
+                  onChange={e => setEditDesc(e.target.value)}
+                  className="w-full bg-[#0d0710] border border-[#221226] rounded px-3 py-1.5 text-white"
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] text-amber-400 font-mono block mb-1">Storyteller Secret Intel (Hidden from Players)</label>
+                <textarea
+                  rows={2}
+                  value={editSecretNotes}
+                  onChange={e => setEditSecretNotes(e.target.value)}
+                  className="w-full bg-[#0d0710] border border-amber-900/60 rounded px-3 py-1.5 text-amber-200 font-mono text-xs"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setIsEditingNode(false)}
+                  className="px-3 py-1 rounded bg-[#180f1c] text-neutral-400 hover:text-white"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveEditNode}
+                  className="px-4 py-1 rounded bg-rose-900 hover:bg-rose-800 text-white font-cinzel font-bold"
+                >
+                  Save Changes
+                </button>
+              </div>
             </div>
+          ) : (
+            <>
+              {/* Classified intel strip */}
+              {selectedNode.secretNotes && (
+                <div className={`p-4 rounded-xl border text-xs font-mono leading-relaxed ${
+                  isStorytellerMode
+                    ? 'bg-amber-950/30 border-amber-800/80 text-amber-200'
+                    : 'bg-neutral-950 border-neutral-800 text-neutral-600 italic select-none'
+                }`}>
+                  <div className="flex items-center gap-1.5 font-bold mb-1 text-amber-300">
+                    <Lock className="w-3.5 h-3.5" />
+                    STORYTELLER CLASSIFIED MOTIVES & OCCULT INTEL:
+                  </div>
+                  {isStorytellerMode ? selectedNode.secretNotes : '[RESTRICTED EVIDENCE REDACTED FOR PLAYERS]'}
+                </div>
+              )}
+
+              {/* Connected Threads */}
+              <div>
+                <span className="text-[10px] font-mono text-neutral-400 uppercase tracking-wider block mb-2">
+                  CONNECTED LEADS & RED STRINGS:
+                </span>
+                <div className="flex flex-wrap gap-2">
+                  {activeBoard.links.filter(l => l.sourceId === selectedNode.id || l.targetId === selectedNode.id).map(link => {
+                    const otherNodeId = link.sourceId === selectedNode.id ? link.targetId : link.sourceId;
+                    const otherNode = activeBoard.nodes.find(n => n.id === otherNodeId);
+                    return (
+                      <div
+                        key={link.id}
+                        className="px-3 py-1.5 rounded-lg bg-[#140c18] border border-[#24132b] text-neutral-300 text-xs flex items-center gap-2"
+                      >
+                        <span className="font-mono text-red-400 font-bold">{link.label}:</span>
+                        <span className="font-semibold text-white">{otherNode?.title || 'Unknown Pin'}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteLink(link.id)}
+                          className="text-neutral-500 hover:text-red-400 ml-1"
+                          title="Cut thread"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </>
           )}
 
-          {/* Connections to other nodes */}
-          <div>
-            <span className="text-[10px] font-mono text-neutral-400 uppercase tracking-wider block mb-2">
-              CONNECTED THREADS:
-            </span>
-            <div className="flex flex-wrap gap-2">
-              {activeBoard.links.filter(l => l.sourceId === selectedNode.id || l.targetId === selectedNode.id).map(link => {
-                const otherNodeId = link.sourceId === selectedNode.id ? link.targetId : link.sourceId;
-                const otherNode = activeBoard.nodes.find(n => n.id === otherNodeId);
-                return (
-                  <div
-                    key={link.id}
-                    className="px-2.5 py-1 rounded-lg bg-[#140d1a] border border-[#24172a] text-neutral-300 text-xs flex items-center gap-2"
-                  >
-                    <span className="font-mono text-rose-400">{link.label}:</span>
-                    <span className="font-semibold text-white">{otherNode?.title || 'Unknown'}</span>
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteLink(link.id)}
-                      className="text-neutral-500 hover:text-red-400"
-                      title="Cut red thread"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
         </div>
       )}
 
-      {/* MODAL 1: ADD PIN / NODE */}
+      {/* MODAL 1: ADD PIN */}
       {addNodeModalOpen && (
         <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
-          <div className="bg-[#0e0912] border border-[#291b30] rounded-xl max-w-lg w-full p-6 shadow-2xl">
-            <div className="flex items-center justify-between pb-3 border-b border-[#211628]">
-              <h3 className="font-cinzel text-base font-bold text-white">ADD EVIDENCE PIN TO BOARD</h3>
+          <div className="bg-[#0e0812] border border-[#2a1730] rounded-2xl max-w-lg w-full p-6 shadow-2xl">
+            <div className="flex items-center justify-between pb-3 border-b border-[#211228]">
+              <h3 className="font-cinzel text-base font-bold text-white">ADD EVIDENCE PIN TO CORKBOARD</h3>
               <button
                 type="button"
                 onClick={() => setAddNodeModalOpen(false)}
@@ -628,11 +849,11 @@ export const MysteryInvestigationBoard: React.FC<MysteryInvestigationBoardProps>
 
             <form onSubmit={handleAddNode} className="mt-4 space-y-3 text-xs">
               <div>
-                <label className="text-[10px] text-neutral-400 font-mono block mb-1">Pin Category</label>
+                <label className="text-[10px] text-neutral-400 font-mono block mb-1">Pin Type</label>
                 <select
                   value={newNodeType}
                   onChange={e => setNewNodeType(e.target.value as MysteryNodeType)}
-                  className="w-full bg-[#140d1a] border border-[#2b1a32] rounded px-3 py-2 text-neutral-100 font-mono"
+                  className="w-full bg-[#140c1a] border border-[#2b1836] rounded px-3 py-2 text-white font-mono"
                 >
                   <option value="clue">Clue / Lead</option>
                   <option value="suspect">Suspect / Person of Interest</option>
@@ -650,7 +871,7 @@ export const MysteryInvestigationBoard: React.FC<MysteryInvestigationBoardProps>
                   placeholder="e.g. Sanguine Vial with Tremere Glyph"
                   value={newNodeTitle}
                   onChange={e => setNewNodeTitle(e.target.value)}
-                  className="w-full bg-[#140d1a] border border-[#2b1a32] rounded px-3 py-1.5 text-neutral-100"
+                  className="w-full bg-[#140c1a] border border-[#2b1836] rounded px-3 py-1.5 text-white"
                 />
               </div>
 
@@ -661,20 +882,18 @@ export const MysteryInvestigationBoard: React.FC<MysteryInvestigationBoardProps>
                   placeholder="Details discovered during mortal investigation..."
                   value={newNodeDesc}
                   onChange={e => setNewNodeDesc(e.target.value)}
-                  className="w-full bg-[#140d1a] border border-[#2b1a32] rounded px-3 py-1.5 text-neutral-100"
+                  className="w-full bg-[#140c1a] border border-[#2b1836] rounded px-3 py-1.5 text-white"
                 />
               </div>
 
               <div>
-                <label className="text-[10px] text-amber-400 font-mono block mb-1">
-                  Storyteller Secret Notes (Hidden in Player View)
-                </label>
+                <label className="text-[10px] text-amber-400 font-mono block mb-1">Storyteller Secret Intel (Hidden from Players)</label>
                 <textarea
                   rows={2}
                   placeholder="True conspirators, occult lore, framing attempts..."
                   value={newNodeSecretNotes}
                   onChange={e => setNewNodeSecretNotes(e.target.value)}
-                  className="w-full bg-[#140d1a] border border-amber-900/50 rounded px-3 py-1.5 text-amber-200 font-mono text-[11px]"
+                  className="w-full bg-[#140c1a] border border-amber-900/60 rounded px-3 py-1.5 text-amber-200 font-mono text-xs"
                 />
               </div>
 
@@ -687,7 +906,7 @@ export const MysteryInvestigationBoard: React.FC<MysteryInvestigationBoardProps>
                   className="accent-purple-600 rounded"
                 />
                 <label htmlFor="secretCheck" className="text-neutral-300 font-mono text-[11px]">
-                  Hide this entire pin from Player View (Undiscovered Conspirator)
+                  Hide entire pin from Player View (Undiscovered Conspirator)
                 </label>
               </div>
 
@@ -712,12 +931,12 @@ export const MysteryInvestigationBoard: React.FC<MysteryInvestigationBoardProps>
         </div>
       )}
 
-      {/* MODAL 2: CONNECT RED THREAD / LINK */}
+      {/* MODAL 2: TIE RED THREAD */}
       {addLinkModalOpen && (
         <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
-          <div className="bg-[#0e0912] border border-[#291b30] rounded-xl max-w-md w-full p-6 shadow-2xl">
-            <div className="flex items-center justify-between pb-3 border-b border-[#211628]">
-              <h3 className="font-cinzel text-base font-bold text-white">CONNECT RED STRING</h3>
+          <div className="bg-[#0e0812] border border-[#2a1730] rounded-2xl max-w-md w-full p-6 shadow-2xl">
+            <div className="flex items-center justify-between pb-3 border-b border-[#211228]">
+              <h3 className="font-cinzel text-base font-bold text-white">TIE RED STRING LEAD</h3>
               <button
                 type="button"
                 onClick={() => setAddLinkModalOpen(false)}
@@ -733,7 +952,7 @@ export const MysteryInvestigationBoard: React.FC<MysteryInvestigationBoardProps>
                 <select
                   value={linkSourceId}
                   onChange={e => setLinkSourceId(e.target.value)}
-                  className="w-full bg-[#140d1a] border border-[#2b1a32] rounded px-3 py-2 text-neutral-100 font-cinzel"
+                  className="w-full bg-[#140c1a] border border-[#2b1836] rounded px-3 py-2 text-white font-cinzel"
                 >
                   <option value="">-- Choose Pin A --</option>
                   {activeBoard.nodes.map(n => (
@@ -747,7 +966,7 @@ export const MysteryInvestigationBoard: React.FC<MysteryInvestigationBoardProps>
                 <select
                   value={linkTargetId}
                   onChange={e => setLinkTargetId(e.target.value)}
-                  className="w-full bg-[#140d1a] border border-[#2b1a32] rounded px-3 py-2 text-neutral-100 font-cinzel"
+                  className="w-full bg-[#140c1a] border border-[#2b1836] rounded px-3 py-2 text-white font-cinzel"
                 >
                   <option value="">-- Choose Pin B --</option>
                   {activeBoard.nodes.filter(n => n.id !== linkSourceId).map(n => (
@@ -757,13 +976,13 @@ export const MysteryInvestigationBoard: React.FC<MysteryInvestigationBoardProps>
               </div>
 
               <div>
-                <label className="text-[10px] text-neutral-400 font-mono block mb-1">Relationship / Connection Note</label>
+                <label className="text-[10px] text-neutral-400 font-mono block mb-1">Lead Note</label>
                 <input
                   type="text"
                   placeholder="e.g. Fled crime scene in victim vehicle"
                   value={linkLabel}
                   onChange={e => setLinkLabel(e.target.value)}
-                  className="w-full bg-[#140d1a] border border-[#2b1a32] rounded px-3 py-1.5 text-neutral-100"
+                  className="w-full bg-[#140c1a] border border-[#2b1836] rounded px-3 py-1.5 text-white"
                 />
               </div>
 
@@ -776,7 +995,7 @@ export const MysteryInvestigationBoard: React.FC<MysteryInvestigationBoardProps>
                   className="accent-purple-600 rounded"
                 />
                 <label htmlFor="secretLinkCheck" className="text-neutral-300 font-mono text-[11px]">
-                  Secret connection (hidden from Player View)
+                  Secret thread (hidden from Player View)
                 </label>
               </div>
 

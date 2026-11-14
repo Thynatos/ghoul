@@ -21,6 +21,7 @@ import { CoterieManagerView } from './components/coterie/CoterieManagerView';
 import { DiablerieModal } from './components/taboos/DiablerieModal';
 import { BloodBondMatrixModal } from './components/taboos/BloodBondMatrixModal';
 import { MysteryInvestigationBoard } from './components/chronicle/MysteryInvestigationBoard';
+import { StorytellerScreen } from './components/storyteller/StorytellerScreen';
 
 export const App: React.FC = () => {
   const [edition, setEdition] = useState<GameEdition>(storageService.getEdition());
@@ -258,6 +259,18 @@ export const App: React.FC = () => {
 
         {view === 'investigation' && (
           <MysteryInvestigationBoard
+            onShowToast={showToast}
+          />
+        )}
+
+        {view === 'st_screen' && (
+          <StorytellerScreen
+            edition={edition}
+            characters={characters}
+            onOpenCombat={() => setCombatDrawerOpen(true)}
+            onOpenMysteryBoard={() => setView('investigation')}
+            onOpenDiablerie={() => setDiablerieModalOpen(true)}
+            onOpenBloodBond={() => setBloodBondModalOpen(true)}
             onShowToast={showToast}
           />
         )}

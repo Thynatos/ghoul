@@ -92,7 +92,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   );
 
   const actions = [
-    { label: 'Character Sheet', icon: User, action: () => { onNavigateView('sheet'); onClose(); } },
+    { label: 'Storyteller Screen (Master GM Console)', icon: Shield, action: () => { onNavigateView('st_screen'); onClose(); } },
+    { label: 'Character Dossier (Sheet)', icon: User, action: () => { onNavigateView('sheet'); onClose(); } },
     { label: 'Tactical Combat & Initiative Tracker', icon: Swords, action: () => { if (onOpenCombat) onOpenCombat(); onClose(); } },
     { label: 'Coterie & Communal Domain Manager', icon: Users, action: () => { onNavigateView('coterie'); onClose(); } },
     { label: 'Detective Mystery & Red String Board', icon: Search, action: () => { onNavigateView('investigation'); onClose(); } },

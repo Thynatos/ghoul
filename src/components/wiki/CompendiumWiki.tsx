@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 import { CLANS_DATA } from '../../data/clans';
 import { DISCIPLINES_DATA } from '../../data/disciplines';
+import { RITUALS_CEREMONIES_DATA } from '../../data/rituals';
+import { ALCHEMY_RECIPES } from '../../data/alchemy';
 import { PREDATOR_TYPES_DATA } from '../../data/predatorTypes';
 import { ADVANTAGES_DATABASE } from '../../data/advantages';
-import { BookOpen, Search, Shield, Sparkles, Flame, Layers } from 'lucide-react';
+import { THREAT_STAT_BLOCKS } from '../../data/npcStatBlocks';
+import { BookOpen, Search, Shield, Sparkles, Flame, Layers, Skull, Droplet, Crosshair } from 'lucide-react';
 
 export const CompendiumWiki: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'clans' | 'disciplines' | 'predators' | 'advantages' | 'rules'>('clans');
+  const [activeTab, setActiveTab] = useState<'clans' | 'disciplines' | 'rituals' | 'alchemy' | 'threats' | 'predators' | 'advantages' | 'rules'>('clans');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedClan, setSelectedClan] = useState<string>(CLANS_DATA[0].name);
   const [selectedDiscipline, setSelectedDiscipline] = useState<string>(DISCIPLINES_DATA[0].id);
@@ -21,6 +24,18 @@ export const CompendiumWiki: React.FC = () => {
     d.name.toLowerCase().includes(q) || d.description.toLowerCase().includes(q)
   );
 
+  const filteredRituals = RITUALS_CEREMONIES_DATA.filter(r =>
+    r.name.toLowerCase().includes(q) || r.system.toLowerCase().includes(q) || r.type.toLowerCase().includes(q)
+  );
+
+  const filteredAlchemy = ALCHEMY_RECIPES.filter(a =>
+    a.name.toLowerCase().includes(q) || a.effect.toLowerCase().includes(q) || a.method.toLowerCase().includes(q)
+  );
+
+  const filteredThreats = THREAT_STAT_BLOCKS.filter(t =>
+    t.name.toLowerCase().includes(q) || t.tactics.toLowerCase().includes(q) || t.category.toLowerCase().includes(q)
+  );
+
   const activeClanData = CLANS_DATA.find(c => c.name === selectedClan) || CLANS_DATA[0];
   const activeDiscData = DISCIPLINES_DATA.find(d => d.id === selectedDiscipline) || DISCIPLINES_DATA[0];
 
@@ -33,7 +48,7 @@ export const CompendiumWiki: React.FC = () => {
             <BookOpen className="w-6 h-6 text-rose-500" /> VTM COMPENDIUM & LORE WIKI
           </h1>
           <p className="text-xs text-neutral-400">
-            Canonical encyclopedia for Clans, Disciplines, Powers, Predator Types, Advantages, and Tabletop Rules.
+            Canonical encyclopedia for Clans, Disciplines, Rituals, Thin-blood Alchemy, Threats, and Rules.
           </p>
         </div>
 
@@ -44,7 +59,7 @@ export const CompendiumWiki: React.FC = () => {
             type="text"
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            placeholder="Search compendium..."
+            placeholder="Search encyclopedia..."
             className="w-full bg-[#12121a] border border-[#262638] rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-rose-600"
           />
         </div>
@@ -53,11 +68,14 @@ export const CompendiumWiki: React.FC = () => {
       {/* Tabs */}
       <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs font-cinzel font-bold">
         {[
-          { id: 'clans', label: 'Kindred Clans', icon: Shield },
-          { id: 'disciplines', label: 'Disciplines & Powers', icon: Sparkles },
-          { id: 'predators', label: 'Predator Types', icon: Flame },
+          { id: 'clans', label: 'Clans', icon: Shield },
+          { id: 'disciplines', label: 'Disciplines', icon: Sparkles },
+          { id: 'rituals', label: 'Rituals & Ceremonies', icon: Droplet },
+          { id: 'alchemy', label: 'Thin-Blood Alchemy', icon: Flame },
+          { id: 'threats', label: 'Antagonist Stat Blocks', icon: Crosshair },
+          { id: 'predators', label: 'Predator Types', icon: Skull },
           { id: 'advantages', label: 'Merits & Flaws', icon: Layers },
-          { id: 'rules', label: 'Rules Reference', icon: BookOpen },
+          { id: 'rules', label: 'Rules Guide', icon: BookOpen },
         ].map(tab => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -66,7 +84,7 @@ export const CompendiumWiki: React.FC = () => {
               key={tab.id}
               type="button"
               onClick={() => setActiveTab(tab.id as any)}
-              className={`px-4 py-2 rounded-xl flex items-center gap-2 whitespace-nowrap transition ${
+              className={`px-3.5 py-2 rounded-xl flex items-center gap-1.5 whitespace-nowrap transition ${
                 isActive
                   ? 'bg-rose-950 border border-rose-700 text-rose-200 shadow-[0_0_12px_rgba(225,29,72,0.3)]'
                   : 'bg-[#12121a] border border-[#20202c] text-neutral-400 hover:text-white'
@@ -81,7 +99,6 @@ export const CompendiumWiki: React.FC = () => {
       {/* Tab: Clans */}
       {activeTab === 'clans' && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Clan Selector Column */}
           <div className="space-y-1.5 max-h-[620px] overflow-y-auto pr-1">
             {filteredClans.map(clan => {
               const isSelected = selectedClan === clan.name;
@@ -106,7 +123,6 @@ export const CompendiumWiki: React.FC = () => {
             })}
           </div>
 
-          {/* Active Clan Detail View */}
           <div className="md:col-span-2 bg-[#0b0b10] border border-[#222230] rounded-2xl p-6 sm:p-8 space-y-6 shadow-2xl animate-fade-in">
             <div className="flex items-center gap-4 pb-4 border-b border-[#1c1c28]">
               <span className="text-5xl">{activeClanData.symbol}</span>
@@ -123,7 +139,6 @@ export const CompendiumWiki: React.FC = () => {
               <p>{activeClanData.lore}</p>
             </div>
 
-            {/* In-Clan Disciplines */}
             <div className="bg-[#12121b] border border-[#20202d] rounded-xl p-4 space-y-2 text-xs">
               <span className="font-cinzel font-bold text-neutral-400 text-xs uppercase block">
                 IN-CLAN DISCIPLINES
@@ -137,7 +152,6 @@ export const CompendiumWiki: React.FC = () => {
               </div>
             </div>
 
-            {/* Bane & Compulsion */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
               <div className="bg-[#12121b] border border-[#20202d] rounded-xl p-4 space-y-1.5">
                 <span className="font-cinzel font-bold text-rose-400 block">CLAN BANE</span>
@@ -152,7 +166,6 @@ export const CompendiumWiki: React.FC = () => {
               </div>
             </div>
 
-            {/* Archetypes */}
             <div className="pt-2">
               <span className="font-cinzel text-xs font-bold text-neutral-400 uppercase tracking-widest block mb-2">
                 Common Kindred Archetypes
@@ -208,7 +221,6 @@ export const CompendiumWiki: React.FC = () => {
               </div>
             </div>
 
-            {/* Powers List */}
             <div className="space-y-3">
               <span className="font-cinzel text-xs font-bold text-neutral-400 uppercase tracking-widest block">
                 Discipline Powers (Level 1 to 5)
@@ -240,6 +252,140 @@ export const CompendiumWiki: React.FC = () => {
                 ))}
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tab: Rituals & Ceremonies */}
+      {activeTab === 'rituals' && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {filteredRituals.map(rit => (
+              <div
+                key={rit.id}
+                className="bg-[#0b0b10] border border-[#20202d] rounded-2xl p-5 space-y-2.5 shadow-xl text-xs"
+              >
+                <div className="flex items-center justify-between border-b border-[#1c1c28] pb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-0.5 rounded bg-rose-950 border border-rose-800 font-mono font-bold text-[10px] text-rose-300">
+                      Level {rit.level}
+                    </span>
+                    <h3 className="font-cinzel font-bold text-sm text-neutral-100">{rit.name}</h3>
+                  </div>
+                  <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-mono ${
+                    rit.type === 'ritual' ? 'bg-rose-950/70 border border-rose-700 text-rose-400' : 'bg-purple-950/70 border border-purple-700 text-purple-400'
+                  }`}>
+                    {rit.type === 'ritual' ? 'Blood Sorcery' : 'Oblivion Ceremony'}
+                  </span>
+                </div>
+
+                <p className="text-neutral-300 leading-relaxed">{rit.system}</p>
+
+                <div className="pt-2 border-t border-[#181822] space-y-1 text-[11px] font-mono text-neutral-400">
+                  <p><strong className="text-neutral-300">Ingredients:</strong> {rit.ingredients}</p>
+                  <div className="flex justify-between">
+                    <span>Pool: {rit.dicePool}</span>
+                    <span>Casting: {rit.castingTime}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Tab: Thin-Blood Alchemy */}
+      {activeTab === 'alchemy' && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {filteredAlchemy.map(alc => (
+              <div
+                key={alc.id}
+                className="bg-[#0b0b10] border border-[#20202d] rounded-2xl p-5 space-y-2.5 shadow-xl text-xs"
+              >
+                <div className="flex items-center justify-between border-b border-[#1c1c28] pb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-0.5 rounded bg-amber-950 border border-amber-800 font-mono font-bold text-[10px] text-amber-300">
+                      Formula {alc.level}
+                    </span>
+                    <h3 className="font-cinzel font-bold text-sm text-neutral-100">{alc.name}</h3>
+                  </div>
+                  <span className="text-[10px] font-mono text-neutral-400 bg-[#161622] px-2 py-0.5 rounded border border-[#272738]">
+                    {alc.method}
+                  </span>
+                </div>
+
+                <p className="text-neutral-300 leading-relaxed">{alc.effect}</p>
+
+                <div className="pt-2 border-t border-[#181822] space-y-1 text-[11px] font-mono text-neutral-400">
+                  <p><strong className="text-neutral-300">Required Resonance:</strong> {alc.resonanceRequired}</p>
+                  <div className="flex justify-between">
+                    <span>Ingredients: {alc.ingredients}</span>
+                    <span>Distillation: {alc.distillationPool}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Tab: Antagonist & Threat Stat Blocks */}
+      {activeTab === 'threats' && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {filteredThreats.map(threat => {
+              const threatColors: Record<string, string> = {
+                Low: 'border-emerald-700 text-emerald-300 bg-emerald-950/60',
+                Medium: 'border-blue-700 text-blue-300 bg-blue-950/60',
+                High: 'border-amber-700 text-amber-300 bg-amber-950/60',
+                Lethal: 'border-rose-700 text-rose-300 bg-rose-950/80 font-bold animate-pulse'
+              };
+
+              return (
+                <div
+                  key={threat.id}
+                  className="bg-[#0b0b10] border border-[#20202d] rounded-2xl p-5 space-y-3 shadow-xl text-xs"
+                >
+                  <div className="flex items-center justify-between border-b border-[#1c1c28] pb-2">
+                    <div>
+                      <h3 className="font-cinzel font-bold text-sm text-white">{threat.name}</h3>
+                      <span className="text-[10px] font-mono text-neutral-500 uppercase">{threat.category}</span>
+                    </div>
+                    <span className={`px-2 py-0.5 rounded border text-[10px] uppercase font-mono ${threatColors[threat.threatLevel]}`}>
+                      {threat.threatLevel} Threat
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-neutral-300 font-mono text-[11px]">
+                    <div className="bg-[#14141d] p-2 rounded border border-[#20202e]">
+                      <span className="text-neutral-500 block text-[9px] font-cinzel">PRIMARY POOL</span>
+                      <span>{threat.primaryPool.name}: <strong>{threat.primaryPool.pool} dice</strong></span>
+                    </div>
+                    <div className="bg-[#14141d] p-2 rounded border border-[#20202e]">
+                      <span className="text-neutral-500 block text-[9px] font-cinzel">SECONDARY POOL</span>
+                      <span>{threat.secondaryPool.name}: <strong>{threat.secondaryPool.pool} dice</strong></span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <span className="font-cinzel text-[10px] text-neutral-400 font-bold block">EQUIPMENT & SUPERNATURAL TRAITS</span>
+                    <ul className="space-y-0.5 text-neutral-300 text-[11px]">
+                      {threat.gearOrPowers.map((g, gi) => (
+                        <li key={gi} className="flex items-start gap-1.5">
+                          <span className="text-rose-500">•</span>
+                          <span>{g}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <p className="text-neutral-400 italic text-[11px] pt-1 border-t border-[#181822]">
+                    <strong className="text-neutral-300 font-cinzel font-bold">Tactics:</strong> {threat.tactics}
+                  </p>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
@@ -294,7 +440,7 @@ export const CompendiumWiki: React.FC = () => {
         </div>
       )}
 
-      {/* Tab: Rules Quick Reference */}
+      {/* Tab: Rules Guide */}
       {activeTab === 'rules' && (
         <div className="bg-[#0b0b10] border border-[#20202d] rounded-2xl p-6 sm:p-8 shadow-2xl space-y-6 text-xs text-neutral-300 leading-relaxed font-sans">
           <div className="border-b border-[#1c1c28] pb-4">

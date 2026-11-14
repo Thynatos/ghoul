@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Search, User, Shield, Dices, BookOpen, Sparkles, MapPin, Plus, FileText, ArrowRight } from 'lucide-react';
+import { Search, User, Shield, Dices, BookOpen, Sparkles, MapPin, Plus, FileText, ArrowRight, Droplet, Skull } from 'lucide-react';
 import { Character, GameEdition } from '../../types/vtm';
 import { CLANS_DATA } from '../../data/clans';
 import { DISCIPLINES_DATA } from '../../data/disciplines';
+import { RITUALS_CEREMONIES_DATA } from '../../data/rituals';
+import { ALCHEMY_RECIPES } from '../../data/alchemy';
 
 interface CommandPaletteProps {
   isOpen: boolean;
@@ -12,6 +14,7 @@ interface CommandPaletteProps {
   onNavigateView: (view: string) => void;
   onOpenDice: () => void;
   onOpenSoundboard: () => void;
+  onOpenResonance: () => void;
   onToggleEdition: (edition: GameEdition) => void;
 }
 
@@ -23,6 +26,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   onNavigateView,
   onOpenDice,
   onOpenSoundboard,
+  onOpenResonance,
   onToggleEdition
 }) => {
   const [query, setQuery] = useState('');
@@ -45,7 +49,6 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 
   const q = query.toLowerCase().trim();
 
-  // Filter items
   const matchedCharacters = characters.filter(c => 
     c.name.toLowerCase().includes(q) || c.clan.toLowerCase().includes(q) || c.concept.toLowerCase().includes(q)
   );
@@ -58,12 +61,21 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     d.name.toLowerCase().includes(q) || d.description.toLowerCase().includes(q)
   );
 
+  const matchedRituals = RITUALS_CEREMONIES_DATA.filter(r =>
+    r.name.toLowerCase().includes(q) || r.system.toLowerCase().includes(q)
+  );
+
+  const matchedAlchemy = ALCHEMY_RECIPES.filter(a =>
+    a.name.toLowerCase().includes(q) || a.effect.toLowerCase().includes(q)
+  );
+
   const actions = [
     { label: 'Character Sheet', icon: User, action: () => { onNavigateView('sheet'); onClose(); } },
     { label: 'Character Builder (Creator)', icon: Plus, action: () => { onNavigateView('creator'); onClose(); } },
     { label: 'Fast Build (Quick Character)', icon: Sparkles, action: () => { onNavigateView('fastbuild'); onClose(); } },
     { label: 'Chronicle Manager & Map', icon: MapPin, action: () => { onNavigateView('chronicle'); onClose(); } },
     { label: 'Interactive Dice Roller', icon: Dices, action: () => { onOpenDice(); onClose(); } },
+    { label: 'Blood Resonance & Hunting Roller', icon: Droplet, action: () => { onOpenResonance(); onClose(); } },
     { label: 'Blood Test (Clan Quiz)', icon: Shield, action: () => { onNavigateView('quiz'); onClose(); } },
     { label: 'Compendium & Lore Wiki', icon: BookOpen, action: () => { onNavigateView('wiki'); onClose(); } },
     { label: 'Open Atmosphere Soundboard', icon: Sparkles, action: () => { onOpenSoundboard(); onClose(); } },
@@ -80,7 +92,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
           <input
             type="text"
             autoFocus
-            placeholder="Search characters, clans, disciplines, tools or actions... (Esc to close)"
+            placeholder="Search characters, clans, disciplines, rituals, alchemy or tools... (Esc to close)"
             value={query}
             onChange={e => setQuery(e.target.value)}
             className="w-full bg-transparent text-sm text-neutral-100 placeholder-neutral-500 focus:outline-none font-sans"
@@ -202,6 +214,31 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                   >
                     <span className="text-sm font-cinzel font-semibold text-rose-400">{disc.name}</span>
                     <span className="text-xs text-neutral-500 truncate max-w-[300px]">{disc.description}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Rituals & Ceremonies */}
+          {matchedRituals.length > 0 && (
+            <div>
+              <p className="px-2 text-[10px] font-cinzel font-bold text-neutral-500 uppercase tracking-widest mb-1">
+                Rituals & Ceremonies ({matchedRituals.length})
+              </p>
+              <div className="space-y-0.5">
+                {matchedRituals.slice(0, 4).map(rit => (
+                  <button
+                    key={rit.id}
+                    type="button"
+                    onClick={() => {
+                      onNavigateView('wiki');
+                      onClose();
+                    }}
+                    className="w-full text-left px-3 py-2 rounded-lg flex items-center justify-between hover:bg-[#181822] text-neutral-300 hover:text-white transition"
+                  >
+                    <span className="text-sm font-cinzel text-neutral-200">{rit.name}</span>
+                    <span className="text-xs font-mono text-rose-400">Level {rit.level}</span>
                   </button>
                 ))}
               </div>

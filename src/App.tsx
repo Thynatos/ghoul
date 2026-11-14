@@ -7,6 +7,7 @@ import { soundEngine } from './services/soundEngine';
 import { Navigation } from './components/common/Navigation';
 import { CommandPalette } from './components/common/CommandPalette';
 import { AmbientSoundModal } from './components/common/AmbientSoundModal';
+import { ResonanceRollerModal } from './components/resonance/ResonanceRollerModal';
 import { ToastContainer, ToastMessage } from './components/common/Toast';
 import { CharacterSheet } from './components/sheet/CharacterSheet';
 import { CharacterBuilder } from './components/creator/CharacterBuilder';
@@ -27,13 +28,13 @@ export const App: React.FC = () => {
   // Modals & Drawers
   const [diceDrawerOpen, setDiceDrawerOpen] = useState(false);
   const [soundboardOpen, setSoundboardOpen] = useState(false);
+  const [resonanceOpen, setResonanceOpen] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   // Primed roll request from sheet
   const [primedRoll, setPrimedRoll] = useState<{ pool: number; label: string; hunger?: number } | null>(null);
 
-  // Ensure active character matches edition or fallback
   const activeCharacter = characters.find(c => c.id === activeCharacterId) || characters[0];
 
   const showToast = (title: string, description?: string, type: ToastMessage['type'] = 'info') => {
@@ -102,7 +103,6 @@ export const App: React.FC = () => {
   };
 
   const handleRouseCheck = () => {
-    // If active character has hunger, test rouse
     if (activeCharacter && activeCharacter.edition === 'v5') {
       const die = Math.floor(Math.random() * 10) + 1;
       const success = die >= 6;
@@ -117,6 +117,23 @@ export const App: React.FC = () => {
         showToast('Rouse Check Failed!', `Rolled a ${die}. Hunger increased to ${nextHunger}!`, 'error');
       }
     }
+  };
+
+  const handleFeedOnVessel = (slakeAmount: number, resonanceName: string) => {
+    if (!activeCharacter) return;
+    if (activeCharacter.edition === 'v5') {
+      const cur = activeCharacter.hunger || 0;
+      const nextHunger = Math.max(0, cur - slakeAmount);
+      handleUpdateCharacter({ ...activeCharacter, hunger: nextHunger });
+      showToast('Feeding Complete', `Slaked ${slakeAmount} Hunger (Now ${nextHunger}/5). Imbued with ${resonanceName}!`, 'blood');
+    } else {
+      const cur = activeCharacter.bloodPoolCurrent || 10;
+      const max = activeCharacter.bloodPoolMax || 15;
+      const nextBlood = Math.min(max, cur + 2);
+      handleUpdateCharacter({ ...activeCharacter, bloodPoolCurrent: nextBlood });
+      showToast('Feeding Complete', `Replenished Blood Pool (Now ${nextBlood}/${max}). Imbued with ${resonanceName}!`, 'blood');
+    }
+    setResonanceOpen(false);
   };
 
   const handleExportBackup = () => {
@@ -166,6 +183,7 @@ export const App: React.FC = () => {
           setPrimedRoll(null);
           setDiceDrawerOpen(true);
         }}
+        onOpenResonance={() => setResonanceOpen(true)}
         onOpenCommandPalette={() => setCommandPaletteOpen(true)}
         onExportBackup={handleExportBackup}
         onImportBackup={handleImportBackup}
@@ -271,6 +289,13 @@ export const App: React.FC = () => {
         onClose={() => setSoundboardOpen(false)}
       />
 
+      <ResonanceRollerModal
+        isOpen={resonanceOpen}
+        onClose={() => setResonanceOpen(false)}
+        activeCharacter={activeCharacter}
+        onFeed={handleFeedOnVessel}
+      />
+
       <CommandPalette
         isOpen={commandPaletteOpen}
         onClose={() => setCommandPaletteOpen(false)}
@@ -279,6 +304,7 @@ export const App: React.FC = () => {
         onNavigateView={setView}
         onOpenDice={() => setDiceDrawerOpen(true)}
         onOpenSoundboard={() => setSoundboardOpen(true)}
+        onOpenResonance={() => setResonanceOpen(true)}
         onToggleEdition={handleToggleEdition}
       />
 

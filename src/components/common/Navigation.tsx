@@ -12,8 +12,7 @@ import {
   Search, 
   Download, 
   Upload, 
-  Settings,
-  Sparkles,
+  Droplet,
   Menu,
   X
 } from 'lucide-react';
@@ -26,6 +25,7 @@ interface NavigationProps {
   onToggleEdition: (ed: GameEdition) => void;
   onOpenSoundboard: () => void;
   onOpenDice: () => void;
+  onOpenResonance: () => void;
   onOpenCommandPalette: () => void;
   onExportBackup: () => void;
   onImportBackup: () => void;
@@ -38,6 +38,7 @@ export const Navigation: React.FC<NavigationProps> = ({
   onToggleEdition,
   onOpenSoundboard,
   onOpenDice,
+  onOpenResonance,
   onOpenCommandPalette,
   onExportBackup,
   onImportBackup
@@ -143,7 +144,17 @@ export const Navigation: React.FC<NavigationProps> = ({
             </button>
           </div>
 
-          {/* Ambience Trigger */}
+          {/* Blood Resonance Hunting Trigger */}
+          <button
+            type="button"
+            onClick={onOpenResonance}
+            className="p-2 rounded-lg bg-[#121218] hover:bg-[#1c1c24] border border-[#232330] text-rose-400 hover:text-rose-300 transition"
+            title="Blood Resonance & Vessel Hunting Roller"
+          >
+            <Droplet className="w-4 h-4 fill-rose-500/40" />
+          </button>
+
+          {/* Ambience Soundboard Trigger */}
           <button
             type="button"
             onClick={onOpenSoundboard}
@@ -231,6 +242,13 @@ export const Navigation: React.FC<NavigationProps> = ({
             );
           })}
           <div className="pt-2 border-t border-[#1c1c24] flex items-center justify-between text-xs text-neutral-400">
+            <button
+              type="button"
+              onClick={() => { onOpenResonance(); setMobileMenuOpen(false); }}
+              className="flex items-center gap-1.5 py-1.5 px-3 rounded bg-[#161622] text-rose-300"
+            >
+              <Droplet className="w-3.5 h-3.5" /> Resonance
+            </button>
             <button
               type="button"
               onClick={() => { onExportBackup(); setMobileMenuOpen(false); }}

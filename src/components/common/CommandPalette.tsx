@@ -1,5 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { Search, User, Shield, Dices, BookOpen, Sparkles, MapPin, Plus, FileText, ArrowRight, Droplet, Skull } from 'lucide-react';
+import { 
+  Search, 
+  User, 
+  Shield, 
+  Dices, 
+  BookOpen, 
+  Sparkles, 
+  MapPin, 
+  Plus, 
+  FileText, 
+  ArrowRight, 
+  Droplet, 
+  Skull,
+  Swords,
+  Users,
+  Link2
+} from 'lucide-react';
 import { Character, GameEdition } from '../../types/vtm';
 import { CLANS_DATA } from '../../data/clans';
 import { DISCIPLINES_DATA } from '../../data/disciplines';
@@ -16,6 +32,9 @@ interface CommandPaletteProps {
   onOpenSoundboard: () => void;
   onOpenResonance: () => void;
   onToggleEdition: (edition: GameEdition) => void;
+  onOpenCombat?: () => void;
+  onOpenDiablerie?: () => void;
+  onOpenBloodBond?: () => void;
 }
 
 export const CommandPalette: React.FC<CommandPaletteProps> = ({
@@ -27,7 +46,10 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   onOpenDice,
   onOpenSoundboard,
   onOpenResonance,
-  onToggleEdition
+  onToggleEdition,
+  onOpenCombat,
+  onOpenDiablerie,
+  onOpenBloodBond
 }) => {
   const [query, setQuery] = useState('');
 
@@ -71,6 +93,11 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 
   const actions = [
     { label: 'Character Sheet', icon: User, action: () => { onNavigateView('sheet'); onClose(); } },
+    { label: 'Tactical Combat & Initiative Tracker', icon: Swords, action: () => { if (onOpenCombat) onOpenCombat(); onClose(); } },
+    { label: 'Coterie & Communal Domain Manager', icon: Users, action: () => { onNavigateView('coterie'); onClose(); } },
+    { label: 'Detective Mystery & Red String Board', icon: Search, action: () => { onNavigateView('investigation'); onClose(); } },
+    { label: 'The Amaranth (Diablerie Simulator)', icon: Skull, action: () => { if (onOpenDiablerie) onOpenDiablerie(); onClose(); } },
+    { label: 'Dark Taboos: Blood Bonds, Torpor & Frenzy Matrix', icon: Link2, action: () => { if (onOpenBloodBond) onOpenBloodBond(); onClose(); } },
     { label: 'Character Builder (Creator)', icon: Plus, action: () => { onNavigateView('creator'); onClose(); } },
     { label: 'Fast Build (Quick Character)', icon: Sparkles, action: () => { onNavigateView('fastbuild'); onClose(); } },
     { label: 'Chronicle Manager & Map', icon: MapPin, action: () => { onNavigateView('chronicle'); onClose(); } },

@@ -10,6 +10,10 @@ import {
   RollResult,
   GameEdition 
 } from '../types/vtm';
+import { CombatEncounter } from '../types/combat';
+import { Coterie } from '../types/coterie';
+import { MysteryBoard } from '../types/investigation';
+import { BloodBondRelation } from '../types/taboo';
 
 const KEYS = {
   CHARACTERS: 'ghoul_characters',
@@ -23,7 +27,11 @@ const KEYS = {
   BOONS: 'ghoul_boons',
   SESSIONS: 'ghoul_sessions',
   ROLLS: 'ghoul_roll_history',
-  EDITION: 'ghoul_edition'
+  EDITION: 'ghoul_edition',
+  COMBAT: 'ghoul_combat_encounters',
+  COTERIES: 'ghoul_coteries',
+  MYSTERY_BOARDS: 'ghoul_mystery_boards',
+  BLOOD_BONDS: 'ghoul_blood_bonds'
 };
 
 export const storageService = {
@@ -230,10 +238,142 @@ export const storageService = {
     localStorage.setItem(KEYS.EDITION, edition);
   },
 
+  // Combat Encounters
+  getCombatEncounters(chronicleId?: string): CombatEncounter[] {
+    try {
+      const data = localStorage.getItem(KEYS.COMBAT);
+      const all: CombatEncounter[] = data ? JSON.parse(data) : getInitialCombatEncounters();
+      return chronicleId ? all.filter(e => !e.chronicleId || e.chronicleId === chronicleId) : all;
+    } catch (e) {
+      return getInitialCombatEncounters();
+    }
+  },
+
+  saveCombatEncounters(encounters: CombatEncounter[]) {
+    localStorage.setItem(KEYS.COMBAT, JSON.stringify(encounters));
+  },
+
+  saveCombatEncounter(encounter: CombatEncounter) {
+    const list = this.getCombatEncounters();
+    const idx = list.findIndex(e => e.id === encounter.id);
+    if (idx >= 0) {
+      list[idx] = encounter;
+    } else {
+      list.unshift(encounter);
+    }
+    this.saveCombatEncounters(list);
+  },
+
+  deleteCombatEncounter(id: string) {
+    const list = this.getCombatEncounters().filter(e => e.id !== id);
+    this.saveCombatEncounters(list);
+  },
+
+  // Coteries
+  getCoteries(chronicleId?: string): Coterie[] {
+    try {
+      const data = localStorage.getItem(KEYS.COTERIES);
+      const all: Coterie[] = data ? JSON.parse(data) : getInitialCoteries();
+      return chronicleId ? all.filter(c => !c.chronicleId || c.chronicleId === chronicleId) : all;
+    } catch (e) {
+      return getInitialCoteries();
+    }
+  },
+
+  getCoterie(id: string): Coterie | undefined {
+    return this.getCoteries().find(c => c.id === id);
+  },
+
+  saveCoteries(coteries: Coterie[]) {
+    localStorage.setItem(KEYS.COTERIES, JSON.stringify(coteries));
+  },
+
+  saveCoterie(coterie: Coterie) {
+    const list = this.getCoteries();
+    const idx = list.findIndex(c => c.id === coterie.id);
+    if (idx >= 0) {
+      list[idx] = coterie;
+    } else {
+      list.unshift(coterie);
+    }
+    this.saveCoteries(list);
+  },
+
+  deleteCoterie(id: string) {
+    const list = this.getCoteries().filter(c => c.id !== id);
+    this.saveCoteries(list);
+  },
+
+  // Mystery & Clue Investigation Boards
+  getMysteryBoards(chronicleId?: string): MysteryBoard[] {
+    try {
+      const data = localStorage.getItem(KEYS.MYSTERY_BOARDS);
+      const all: MysteryBoard[] = data ? JSON.parse(data) : getInitialMysteryBoards();
+      return chronicleId ? all.filter(m => !m.chronicleId || m.chronicleId === chronicleId) : all;
+    } catch (e) {
+      return getInitialMysteryBoards();
+    }
+  },
+
+  getMysteryBoard(id: string): MysteryBoard | undefined {
+    return this.getMysteryBoards().find(m => m.id === id);
+  },
+
+  saveMysteryBoards(boards: MysteryBoard[]) {
+    localStorage.setItem(KEYS.MYSTERY_BOARDS, JSON.stringify(boards));
+  },
+
+  saveMysteryBoard(board: MysteryBoard) {
+    const list = this.getMysteryBoards();
+    const idx = list.findIndex(m => m.id === board.id);
+    if (idx >= 0) {
+      list[idx] = { ...board, updatedAt: Date.now() };
+    } else {
+      list.unshift({ ...board, createdAt: Date.now(), updatedAt: Date.now() });
+    }
+    this.saveMysteryBoards(list);
+  },
+
+  deleteMysteryBoard(id: string) {
+    const list = this.getMysteryBoards().filter(m => m.id !== id);
+    this.saveMysteryBoards(list);
+  },
+
+  // Blood Bonds
+  getBloodBonds(chronicleId?: string): BloodBondRelation[] {
+    try {
+      const data = localStorage.getItem(KEYS.BLOOD_BONDS);
+      const all: BloodBondRelation[] = data ? JSON.parse(data) : getInitialBloodBonds();
+      return chronicleId ? all.filter(b => !b.chronicleId || b.chronicleId === chronicleId) : all;
+    } catch (e) {
+      return getInitialBloodBonds();
+    }
+  },
+
+  saveBloodBonds(bonds: BloodBondRelation[]) {
+    localStorage.setItem(KEYS.BLOOD_BONDS, JSON.stringify(bonds));
+  },
+
+  saveBloodBond(bond: BloodBondRelation) {
+    const list = this.getBloodBonds();
+    const idx = list.findIndex(b => b.id === bond.id);
+    if (idx >= 0) {
+      list[idx] = bond;
+    } else {
+      list.unshift(bond);
+    }
+    this.saveBloodBonds(list);
+  },
+
+  deleteBloodBond(id: string) {
+    const list = this.getBloodBonds().filter(b => b.id !== id);
+    this.saveBloodBonds(list);
+  },
+
   // Backup & Restore
   exportBackupJSON(): string {
     const bundle = {
-      version: '1.0',
+      version: '2.0',
       exportedAt: new Date().toISOString(),
       characters: this.getCharacters(),
       chronicles: this.getChronicles(),
@@ -242,7 +382,11 @@ export const storageService = {
       nodes: this.getRelationshipNodes(),
       links: this.getRelationshipLinks(),
       boons: this.getBoons(),
-      sessions: this.getSessions()
+      sessions: this.getSessions(),
+      combatEncounters: this.getCombatEncounters(),
+      coteries: this.getCoteries(),
+      mysteryBoards: this.getMysteryBoards(),
+      bloodBonds: this.getBloodBonds()
     };
     return JSON.stringify(bundle, null, 2);
   },
@@ -258,6 +402,10 @@ export const storageService = {
       if (Array.isArray(data.links)) this.saveRelationshipLinks(data.links);
       if (Array.isArray(data.boons)) this.saveBoons(data.boons);
       if (Array.isArray(data.sessions)) this.saveSessions(data.sessions);
+      if (Array.isArray(data.combatEncounters)) this.saveCombatEncounters(data.combatEncounters);
+      if (Array.isArray(data.coteries)) this.saveCoteries(data.coteries);
+      if (Array.isArray(data.mysteryBoards)) this.saveMysteryBoards(data.mysteryBoards);
+      if (Array.isArray(data.bloodBonds)) this.saveBloodBonds(data.bloodBonds);
       return true;
     } catch (e) {
       console.error('Import failed', e);
@@ -563,6 +711,354 @@ function getInitialSessions(): SessionNote[] {
         'Is an ancient elder waking beneath Chicago?',
         'Has the Second Inquisition tapped into the city traffic grid?'
       ]
+    }
+  ];
+}
+
+function getInitialCoteries(): Coterie[] {
+  return [
+    {
+      id: 'coterie_southside_underground',
+      chronicleId: 'chronicle_chicago_1',
+      name: 'The South Side Underground',
+      concept: 'Anarch Street Champions & Labor Haven Wardens',
+      type: 'champions',
+      tier: 2,
+      leaderId: 'char_brujah_marcus',
+      memberIds: ['char_brujah_marcus', 'char_toreador_helena'],
+      members: [
+        {
+          characterId: 'char_brujah_marcus',
+          name: 'Marcus "Rebel" Vance',
+          clan: 'Brujah',
+          role: 'Leader',
+          portraitUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80'
+        },
+        {
+          characterId: 'char_toreador_helena',
+          name: 'Helena DuMont',
+          clan: 'Toreador',
+          role: 'Diplomat',
+          portraitUrl: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=400&q=80'
+        }
+      ],
+      chasse: 2,     // Rich feeding grounds across Bridgeport & Lower West Side
+      lien: 3,       // Deep ties into the longshoremen union and community organizers
+      portillon: 2,  // Barricaded perimeter with security cameras and lookout scouts
+      havenTraits: [
+        'Armory',
+        'Hidden Escape Tunnels',
+        'Ghoul Security Detail',
+        'Occult Library'
+      ],
+      sharedAdvantages: [
+        {
+          id: 'shared_merit_safehouse',
+          name: 'Haven: Fortified Machine Shop',
+          type: 'merit',
+          category: 'haven',
+          dots: 3,
+          details: 'Heavy blast doors, soundproofed basement pit, and subterranean escape tunnel to drainage canal.'
+        },
+        {
+          id: 'shared_merit_union',
+          name: 'Allies: Longshoremen Dockworkers',
+          type: 'merit',
+          category: 'background',
+          dots: 2,
+          details: 'Mortal dock union workers who alert the coterie to strange cargo movements and police activity.'
+        }
+      ],
+      notes: 'Formed in late 2026 following increased Second Inquisition pressure along the Chicago rail corridors. Marcus provides muscle and street defense, while Helena finances legal covers and monitors Elysium political gossip.'
+    }
+  ];
+}
+
+function getInitialCombatEncounters(): CombatEncounter[] {
+  return [
+    {
+      id: 'encounter_bridgeport_ambush',
+      chronicleId: 'chronicle_chicago_1',
+      name: 'Ambush at Bridgeport Docks (Pier 42)',
+      round: 1,
+      activeCombatantIndex: 0,
+      isActive: true,
+      combatants: [
+        {
+          id: 'c_marcus',
+          name: 'Marcus "Rebel" Vance',
+          type: 'pc',
+          characterId: 'char_brujah_marcus',
+          clan: 'Brujah',
+          initiativeRoll: 7.5,
+          healthMax: 7,
+          healthDamage: ['none', 'none', 'none', 'none', 'none', 'none', 'none'],
+          willpowerMax: 6,
+          willpowerDamage: ['none', 'none', 'none', 'none', 'none', 'none'],
+          armor: 1,
+          statusEffects: ['Cover (-2 to hit)'],
+          isTurn: true,
+          wits: 3,
+          awareness: 2,
+          celerity: 1,
+          notes: 'Potence 2 active (Lethal Body, Prowess). Armed with heavy steel tire iron and .45 ACP pistol.',
+          primaryPoolName: 'Brawl + Potence',
+          primaryPoolValue: 6,
+          secondaryPoolName: 'Firearms',
+          secondaryPoolValue: 5
+        },
+        {
+          id: 'c_si_leader',
+          name: 'SAD Tactical Strike Lead (FIRSTLIGHT)',
+          type: 'threat',
+          initiativeRoll: 6.8,
+          healthMax: 7,
+          healthDamage: ['superficial', 'none', 'none', 'none', 'none', 'none', 'none'],
+          willpowerMax: 6,
+          willpowerDamage: ['none', 'none', 'none', 'none', 'none', 'none'],
+          armor: 2,
+          statusEffects: [],
+          isTurn: false,
+          wits: 3,
+          awareness: 3,
+          notes: 'Heavy tactical ceramic armor, UV spotlight beam, incendiary shotgun rounds (Aggravated to kindred).',
+          primaryPoolName: 'Firearms & Breaching',
+          primaryPoolValue: 8,
+          secondaryPoolName: 'Athletics & Suppression',
+          secondaryPoolValue: 7
+        },
+        {
+          id: 'c_helena',
+          name: 'Helena DuMont',
+          type: 'pc',
+          characterId: 'char_toreador_helena',
+          clan: 'Toreador',
+          initiativeRoll: 6.2,
+          healthMax: 6,
+          healthDamage: ['none', 'none', 'none', 'none', 'none', 'none'],
+          willpowerMax: 7,
+          willpowerDamage: ['none', 'none', 'none', 'none', 'none', 'none', 'none'],
+          armor: 0,
+          statusEffects: [],
+          isTurn: false,
+          wits: 3,
+          awareness: 3,
+          celerity: 1,
+          notes: 'Flanking behind shipping container. Auspex Heightened Senses scanning for snipers.',
+          primaryPoolName: 'Presence / Firearms',
+          primaryPoolValue: 4,
+          secondaryPoolName: 'Dodge (Dex + Athletics)',
+          secondaryPoolValue: 4
+        },
+        {
+          id: 'c_ghoul_guard',
+          name: 'Blood-Bound Enforcer Ghoul',
+          type: 'threat',
+          initiativeRoll: 4.4,
+          healthMax: 6,
+          healthDamage: ['none', 'none', 'none', 'none', 'none', 'none'],
+          willpowerMax: 5,
+          willpowerDamage: ['none', 'none', 'none', 'none', 'none'],
+          armor: 1,
+          statusEffects: [],
+          isTurn: false,
+          wits: 2,
+          awareness: 2,
+          notes: 'Potence 1, brass knuckles, 12-gauge pump shotgun.',
+          primaryPoolName: 'Brawl & Shotguns',
+          primaryPoolValue: 6,
+          secondaryPoolName: 'Bodyguarding',
+          secondaryPoolValue: 5
+        }
+      ],
+      log: [
+        {
+          id: 'log_init',
+          round: 1,
+          timestamp: Date.now() - 45000,
+          actorName: 'Tactical Combat Engine',
+          action: 'Combat Initiated',
+          details: 'Initiative order calculated from Wits + Awareness + Celerity.'
+        },
+        {
+          id: 'log_flare',
+          round: 1,
+          timestamp: Date.now() - 25000,
+          actorName: 'SAD Tactical Strike Lead',
+          action: 'Fired Magnesium Flare',
+          details: 'Blinding glare across the pier. Forces difficulty 2 Rötschreck check on Kindred looking directly at the blast.'
+        }
+      ]
+    }
+  ];
+}
+
+function getInitialMysteryBoards(): MysteryBoard[] {
+  return [
+    {
+      id: 'board_chicago_homicide',
+      chronicleId: 'chronicle_chicago_1',
+      title: 'The Exsanguination of Alderman Campbell',
+      caseNumber: 'CPD-HOMICIDE-8821',
+      briefing: 'Prominent Chicago Alderman Thomas Campbell was discovered dead inside his locked River North penthouse. All five liters of arterial blood were completely drained without a single drop on the floor. No signs of forced entry. The Camarilla Harpy has warned the coterie that a Masquerade catastrophe is looming if mortal detectives uncover kindred involvement.',
+      isSolved: false,
+      createdAt: Date.now() - 86400000 * 3,
+      updatedAt: Date.now(),
+      nodes: [
+        {
+          id: 'node_crime_scene',
+          type: 'crime_scene',
+          title: 'River North Penthouse Study',
+          description: 'The crime scene: 44th floor private study. Locked from the inside with deadbolt and biometric keypad. Balcony French door slightly ajar.',
+          x: 140,
+          y: 90,
+          status: 'discovered',
+          color: '#e11d48',
+          secretNotes: 'Balcony railing shows faint scorch residue and traces of Banu Haqim Blood Sorcery glyphs.'
+        },
+        {
+          id: 'node_victim_alderman',
+          type: 'victim',
+          title: 'Alderman Thomas Campbell',
+          description: 'Age 54. Powerful chair of City Zoning Commission. Handled commercial permits along the Chicago River.',
+          x: 420,
+          y: 90,
+          status: 'discovered',
+          color: '#f43f5e',
+          secretNotes: 'Campbell was secretly under Ventrue Dominate to approve zoning waivers for Elysium annex properties.'
+        },
+        {
+          id: 'node_autopsy_report',
+          type: 'autopsy',
+          title: 'Coroner Report #ME-402',
+          description: 'Cause of death: acute hypovolemic shock. Zero detectable blood volume remaining in body. Two clean puncture wounds on right carotid artery.',
+          x: 420,
+          y: 280,
+          status: 'discovered',
+          color: '#a855f7',
+          secretNotes: 'Coroner detected faint supernatural salivary enzyme that prevents mortal blood clotting and suppresses bruising.'
+        },
+        {
+          id: 'node_clue_security_tape',
+          type: 'clue',
+          title: 'Distorted CCTV Feed (03:14 AM)',
+          description: 'Hallway camera footage outside penthouse suffered heavy magnetic static between 03:12 and 03:22 AM. A fleeting cloaked shadow is visible.',
+          x: 140,
+          y: 280,
+          status: 'discovered',
+          color: '#38bdf8',
+          secretNotes: 'Pattern of electromagnetic static matches Obfuscate Level 3 (Cloak of Shadows) optical distortion.'
+        },
+        {
+          id: 'node_suspect_inquisitor',
+          type: 'suspect',
+          title: 'Father Lucian (Vatican Entity)',
+          description: 'A shadowy Jesuit priest seen lingering around the precinct morgue and demanding copies of Campbell\'s personal diaries.',
+          x: 700,
+          y: 90,
+          status: 'unsolved',
+          color: '#eab308',
+          secretNotes: 'Second Inquisition contact. Believes Campbell was killed by Anarchs to incite Camarilla panic.'
+        },
+        {
+          id: 'node_evidence_sulfur',
+          type: 'evidence',
+          title: 'Sulfur & Alchemical Ash Residue',
+          description: 'Grey-white crystalline residue collected from the fireplace hearth in Campbell\'s study. Smells faintly of copper and ozone.',
+          x: 420,
+          y: 450,
+          status: 'discovered',
+          color: '#22c55e',
+          secretNotes: 'Alchemical sulfur component from an illicit blood sorcery divination ritual.'
+        },
+        {
+          id: 'node_secret_priestess',
+          type: 'suspect',
+          title: 'Sister Nadia (Blood Cultist)',
+          description: 'Secret Conspirator: Operates a clandestine blood shrine in an abandoned subway vault beneath the Loop.',
+          x: 700,
+          y: 280,
+          status: 'hidden',
+          isSecret: true,
+          color: '#ef4444',
+          secretNotes: 'ST ONLY: Sister Nadia drained Campbell to awaken an ancient Methuselah torpid beneath Michigan Avenue. She left the Banu Haqim glyphs intentionally to frame the Assamites.'
+        }
+      ],
+      links: [
+        {
+          id: 'link_cs_victim',
+          sourceId: 'node_crime_scene',
+          targetId: 'node_victim_alderman',
+          label: 'Body seated at private desk',
+          color: '#e11d48'
+        },
+        {
+          id: 'link_victim_autopsy',
+          sourceId: 'node_victim_alderman',
+          targetId: 'node_autopsy_report',
+          label: 'Total exsanguination confirmed',
+          color: '#a855f7'
+        },
+        {
+          id: 'link_cs_cctv',
+          sourceId: 'node_crime_scene',
+          targetId: 'node_clue_security_tape',
+          label: 'Hallway camera feed timestamped',
+          color: '#38bdf8'
+        },
+        {
+          id: 'link_autopsy_evidence',
+          sourceId: 'node_autopsy_report',
+          targetId: 'node_evidence_sulfur',
+          label: 'Sulfur traces found under victim fingernails',
+          color: '#22c55e'
+        },
+        {
+          id: 'link_cctv_inquisitor',
+          sourceId: 'node_clue_security_tape',
+          targetId: 'node_suspect_inquisitor',
+          label: 'Vehicle outside matches Church lease',
+          color: '#eab308'
+        },
+        {
+          id: 'link_evidence_priestess',
+          sourceId: 'node_evidence_sulfur',
+          targetId: 'node_secret_priestess',
+          label: 'Sulfur purity matches ritual vault cache',
+          isSecret: true,
+          color: '#dc2626',
+          secretDetails: 'Connects directly to the hidden subterranean shrine.'
+        }
+      ]
+    }
+  ];
+}
+
+function getInitialBloodBonds(): BloodBondRelation[] {
+  return [
+    {
+      id: 'bond_helena_marcus',
+      chronicleId: 'chronicle_chicago_1',
+      regnantId: 'char_toreador_helena',
+      regnantName: 'Helena DuMont',
+      thrallId: 'char_brujah_marcus',
+      thrallName: 'Marcus "Rebel" Vance',
+      drinkCount: 1,
+      stage: 1,
+      lastDrinkDate: '2026-10-21',
+      notes: 'Helena fed Marcus a sip of her vitae to stabilize him after he was shot with phosphorus. Marcus experiences vivid flashes of Helena\'s face in his dreams.'
+    },
+    {
+      id: 'bond_helena_ghoul',
+      chronicleId: 'chronicle_chicago_1',
+      regnantId: 'char_toreador_helena',
+      regnantName: 'Helena DuMont',
+      thrallId: 'npc_ghoul_enforcer',
+      thrallName: 'Blood-Bound Enforcer Ghoul',
+      drinkCount: 3,
+      stage: 3,
+      lastDrinkDate: '2026-11-01',
+      notes: 'Complete Blood Bond & Vassalage. The ghoul would gladly throw himself into an incinerator if Helena commanded it.'
     }
   ];
 }

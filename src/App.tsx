@@ -16,6 +16,11 @@ import { ChronicleManager } from './components/chronicle/ChronicleManager';
 import { DiceRollerDrawer } from './components/dice/DiceRollerDrawer';
 import { ClanQuizView } from './components/quiz/ClanQuizView';
 import { CompendiumWiki } from './components/wiki/CompendiumWiki';
+import { CombatTrackerDrawer } from './components/combat/CombatTrackerDrawer';
+import { CoterieManagerView } from './components/coterie/CoterieManagerView';
+import { DiablerieModal } from './components/taboos/DiablerieModal';
+import { BloodBondMatrixModal } from './components/taboos/BloodBondMatrixModal';
+import { MysteryInvestigationBoard } from './components/chronicle/MysteryInvestigationBoard';
 
 export const App: React.FC = () => {
   const [edition, setEdition] = useState<GameEdition>(storageService.getEdition());
@@ -30,6 +35,9 @@ export const App: React.FC = () => {
   const [soundboardOpen, setSoundboardOpen] = useState(false);
   const [resonanceOpen, setResonanceOpen] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  const [combatDrawerOpen, setCombatDrawerOpen] = useState(false);
+  const [diablerieModalOpen, setDiablerieModalOpen] = useState(false);
+  const [bloodBondModalOpen, setBloodBondModalOpen] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   // Primed roll request from sheet
@@ -187,6 +195,9 @@ export const App: React.FC = () => {
         onOpenCommandPalette={() => setCommandPaletteOpen(true)}
         onExportBackup={handleExportBackup}
         onImportBackup={handleImportBackup}
+        onOpenCombat={() => setCombatDrawerOpen(true)}
+        onOpenDiablerie={() => setDiablerieModalOpen(true)}
+        onOpenBloodBond={() => setBloodBondModalOpen(true)}
       />
 
       {/* Main View Router */}
@@ -230,10 +241,24 @@ export const App: React.FC = () => {
           />
         )}
 
+        {view === 'coterie' && (
+          <CoterieManagerView
+            characters={characters}
+            onShowToast={showToast}
+            onNavigateCharacter={handleSelectCharacter}
+          />
+        )}
+
         {view === 'chronicle' && (
           <ChronicleManager
             edition={edition}
             onLaunchRoll={(pool, label) => handleLaunchRoll(pool, label)}
+          />
+        )}
+
+        {view === 'investigation' && (
+          <MysteryInvestigationBoard
+            onShowToast={showToast}
           />
         )}
 
@@ -284,6 +309,34 @@ export const App: React.FC = () => {
         />
       )}
 
+      {combatDrawerOpen && (
+        <CombatTrackerDrawer
+          isOpen={combatDrawerOpen}
+          onClose={() => setCombatDrawerOpen(false)}
+          characters={characters}
+          onShowToast={showToast}
+        />
+      )}
+
+      {diablerieModalOpen && (
+        <DiablerieModal
+          isOpen={diablerieModalOpen}
+          onClose={() => setDiablerieModalOpen(false)}
+          characters={characters}
+          onUpdateCharacter={handleUpdateCharacter}
+          onShowToast={showToast}
+        />
+      )}
+
+      {bloodBondModalOpen && (
+        <BloodBondMatrixModal
+          isOpen={bloodBondModalOpen}
+          onClose={() => setBloodBondModalOpen(false)}
+          characters={characters}
+          onShowToast={showToast}
+        />
+      )}
+
       <AmbientSoundModal
         isOpen={soundboardOpen}
         onClose={() => setSoundboardOpen(false)}
@@ -306,6 +359,9 @@ export const App: React.FC = () => {
         onOpenSoundboard={() => setSoundboardOpen(true)}
         onOpenResonance={() => setResonanceOpen(true)}
         onToggleEdition={handleToggleEdition}
+        onOpenCombat={() => setCombatDrawerOpen(true)}
+        onOpenDiablerie={() => setDiablerieModalOpen(true)}
+        onOpenBloodBond={() => setBloodBondModalOpen(true)}
       />
 
       <ToastContainer

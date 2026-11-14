@@ -380,6 +380,151 @@ class SoundEngine {
     });
     this.ambientNodes = {};
   }
+
+  // Dark Taboos & Combat Procedural SFX
+  public playHeartbeat() {
+    if (this.isMuted) return;
+    try {
+      this.initCtx();
+      if (!this.ctx) return;
+      const now = this.ctx.currentTime;
+
+      // Two thumps (lub-dub)
+      [0, 0.18].forEach((offset, idx) => {
+        const osc = this.ctx!.createOscillator();
+        const gain = this.ctx!.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(idx === 0 ? 70 : 55, now + offset);
+        osc.frequency.exponentialRampToValueAtTime(30, now + offset + 0.15);
+
+        gain.gain.setValueAtTime(idx === 0 ? 0.35 : 0.25, now + offset);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + offset + 0.16);
+
+        osc.connect(gain);
+        gain.connect(this.ctx!.destination);
+        osc.start(now + offset);
+        osc.stop(now + offset + 0.18);
+      });
+    } catch (e) {}
+  }
+
+  public playDiablerieGasp() {
+    if (this.isMuted) return;
+    try {
+      this.initCtx();
+      if (!this.ctx) return;
+      const now = this.ctx.currentTime;
+
+      // Unearthly soul drain dissonance
+      const freqs = [110, 164.81, 233.08, 466.16]; // Minor second / tritone dissonance
+      freqs.forEach((f, idx) => {
+        const osc = this.ctx!.createOscillator();
+        const gain = this.ctx!.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(f, now);
+        osc.frequency.exponentialRampToValueAtTime(f * 0.7, now + 1.6);
+
+        gain.gain.setValueAtTime(0.08 / (idx + 1), now);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 1.8);
+
+        const filter = this.ctx!.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(500, now);
+        filter.frequency.linearRampToValueAtTime(120, now + 1.6);
+
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.ctx!.destination);
+
+        osc.start(now);
+        osc.stop(now + 1.8);
+      });
+    } catch (e) {}
+  }
+
+  public playFrenzyRoar() {
+    if (this.isMuted) return;
+    try {
+      this.initCtx();
+      if (!this.ctx) return;
+      const now = this.ctx.currentTime;
+
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(80, now);
+      osc.frequency.linearRampToValueAtTime(140, now + 0.2);
+      osc.frequency.exponentialRampToValueAtTime(40, now + 0.9);
+
+      const filter = this.ctx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.setValueAtTime(250, now);
+      filter.Q.value = 3;
+
+      gain.gain.setValueAtTime(0.3, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.95);
+
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc.start(now);
+      osc.stop(now + 0.95);
+    } catch (e) {}
+  }
+
+  public playCombatHit() {
+    if (this.isMuted) return;
+    try {
+      this.initCtx();
+      if (!this.ctx) return;
+      const now = this.ctx.currentTime;
+
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(180, now);
+      osc.frequency.exponentialRampToValueAtTime(45, now + 0.12);
+
+      gain.gain.setValueAtTime(0.35, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.15);
+    } catch (e) {}
+  }
+
+  public playStakeImpact() {
+    if (this.isMuted) return;
+    try {
+      this.initCtx();
+      if (!this.ctx) return;
+      const now = this.ctx.currentTime;
+
+      // Heavy wood crack + resonant hollow thud
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(240, now);
+      osc.frequency.exponentialRampToValueAtTime(30, now + 0.2);
+
+      gain.gain.setValueAtTime(0.28, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+
+      const filter = this.ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(400, now);
+
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc.start(now);
+      osc.stop(now + 0.25);
+    } catch (e) {}
+  }
 }
 
 export const soundEngine = new SoundEngine();

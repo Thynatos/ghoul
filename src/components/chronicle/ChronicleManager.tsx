@@ -15,7 +15,8 @@ import { RelationshipWeb } from './RelationshipWeb';
 import { HarpyDashboard } from './HarpyDashboard';
 import { NpcRoster } from './NpcRoster';
 import { SessionJournal } from './SessionJournal';
-import { MapPin as MapPinIcon, Network, Scroll, Users, BookOpen, ShieldCheck, Plus } from 'lucide-react';
+import { MysteryInvestigationBoard } from './MysteryInvestigationBoard';
+import { MapPin as MapPinIcon, Network, Scroll, Users, BookOpen, ShieldCheck, Plus, Search } from 'lucide-react';
 
 interface ChronicleManagerProps {
   edition: GameEdition;
@@ -31,7 +32,7 @@ export const ChronicleManager: React.FC<ChronicleManagerProps> = ({
     storageService.getActiveChronicleId() || chronicles[0]?.id || 'chronicle_1'
   );
 
-  const [activeTab, setActiveTab] = useState<'map' | 'web' | 'boons' | 'npcs' | 'sessions'>('map');
+  const [activeTab, setActiveTab] = useState<'map' | 'web' | 'boons' | 'npcs' | 'sessions' | 'investigation'>('map');
 
   // Child Data
   const [pins, setPins] = useState<MapPin[]>(storageService.getPins(activeChronicleId));
@@ -76,6 +77,7 @@ export const ChronicleManager: React.FC<ChronicleManagerProps> = ({
   const tabs = [
     { id: 'map', label: 'City Map & Turf', icon: MapPinIcon },
     { id: 'web', label: 'Relationship Web', icon: Network },
+    { id: 'investigation', label: 'Mystery Pinboard', icon: Search },
     { id: 'boons', label: 'Harpy Boons Ledger', icon: Scroll },
     { id: 'npcs', label: 'NPC Dossiers', icon: Users },
     { id: 'sessions', label: 'Session Journal', icon: BookOpen },
@@ -193,6 +195,10 @@ export const ChronicleManager: React.FC<ChronicleManagerProps> = ({
             sessions={sessions}
             onUpdateSessions={handleUpdateSessions}
           />
+        )}
+
+        {activeTab === 'investigation' && (
+          <MysteryInvestigationBoard />
         )}
       </div>
     </div>

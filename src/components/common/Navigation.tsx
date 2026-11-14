@@ -14,7 +14,11 @@ import {
   Upload, 
   Droplet,
   Menu,
-  X
+  X,
+  Swords,
+  Users,
+  Skull,
+  Link2
 } from 'lucide-react';
 import { GameEdition } from '../../types/vtm';
 
@@ -29,6 +33,9 @@ interface NavigationProps {
   onOpenCommandPalette: () => void;
   onExportBackup: () => void;
   onImportBackup: () => void;
+  onOpenCombat?: () => void;
+  onOpenDiablerie?: () => void;
+  onOpenBloodBond?: () => void;
 }
 
 export const Navigation: React.FC<NavigationProps> = ({
@@ -41,18 +48,23 @@ export const Navigation: React.FC<NavigationProps> = ({
   onOpenResonance,
   onOpenCommandPalette,
   onExportBackup,
-  onImportBackup
+  onImportBackup,
+  onOpenCombat,
+  onOpenDiablerie,
+  onOpenBloodBond
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navItems = [
-    { id: 'sheet', label: 'Character Sheet', icon: User },
+    { id: 'sheet', label: 'Sheet', icon: User },
     { id: 'creator', label: 'Builder', icon: PlusCircle },
     { id: 'fastbuild', label: 'Fast Build', icon: Zap },
-    { id: 'chronicle', label: 'Chronicle & Map', icon: MapPin },
-    { id: 'diceroller', label: 'Dice Roller', icon: Dices },
+    { id: 'coterie', label: 'Coterie', icon: Users },
+    { id: 'chronicle', label: 'Chronicle', icon: MapPin },
+    { id: 'investigation', label: 'Mystery Board', icon: Search },
+    { id: 'diceroller', label: 'Dice', icon: Dices },
     { id: 'quiz', label: 'Blood Test', icon: ShieldAlert },
-    { id: 'wiki', label: 'Lore Wiki', icon: BookOpen },
+    { id: 'wiki', label: 'Wiki', icon: BookOpen },
   ];
 
   const handleNavClick = (viewId: string) => {
@@ -143,6 +155,42 @@ export const Navigation: React.FC<NavigationProps> = ({
               V20
             </button>
           </div>
+
+          {/* Tactical Combat Trigger */}
+          {onOpenCombat && (
+            <button
+              type="button"
+              onClick={onOpenCombat}
+              className="p-2 rounded-lg bg-red-950/70 hover:bg-red-900 border border-red-800 text-red-300 shadow-[0_0_10px_rgba(225,29,72,0.3)] transition"
+              title="Tactical Combat & Initiative Tracker"
+            >
+              <Swords className="w-4 h-4" />
+            </button>
+          )}
+
+          {/* Dark Taboos: Blood Bond & Frenzy Matrix */}
+          {onOpenBloodBond && (
+            <button
+              type="button"
+              onClick={onOpenBloodBond}
+              className="p-2 rounded-lg bg-[#140b12] hover:bg-[#20101c] border border-rose-900/60 text-rose-300 hover:text-white transition"
+              title="Dark Taboos: Blood Bonds, Torpor & Frenzy Simulator"
+            >
+              <Link2 className="w-4 h-4" />
+            </button>
+          )}
+
+          {/* Diablerie (The Amaranth) Trigger */}
+          {onOpenDiablerie && (
+            <button
+              type="button"
+              onClick={onOpenDiablerie}
+              className="p-2 rounded-lg bg-neutral-950 hover:bg-red-950 border border-neutral-800 hover:border-red-700 text-neutral-400 hover:text-red-300 transition"
+              title="The Amaranth: Diablerie Simulator"
+            >
+              <Skull className="w-4 h-4" />
+            </button>
+          )}
 
           {/* Blood Resonance Hunting Trigger */}
           <button
@@ -241,27 +289,40 @@ export const Navigation: React.FC<NavigationProps> = ({
               </button>
             );
           })}
-          <div className="pt-2 border-t border-[#1c1c24] flex items-center justify-between text-xs text-neutral-400">
+          <div className="pt-2 border-t border-[#1c1c24] flex flex-wrap items-center justify-between gap-1 text-xs text-neutral-400">
+            {onOpenCombat && (
+              <button
+                type="button"
+                onClick={() => { onOpenCombat(); setMobileMenuOpen(false); }}
+                className="flex items-center gap-1 py-1.5 px-2.5 rounded bg-red-950/60 border border-red-800 text-red-200"
+              >
+                <Swords className="w-3.5 h-3.5 text-red-400" /> Combat
+              </button>
+            )}
+            {onOpenBloodBond && (
+              <button
+                type="button"
+                onClick={() => { onOpenBloodBond(); setMobileMenuOpen(false); }}
+                className="flex items-center gap-1 py-1.5 px-2.5 rounded bg-[#160c14] border border-rose-900 text-rose-300"
+              >
+                <Link2 className="w-3.5 h-3.5" /> Bonds
+              </button>
+            )}
+            {onOpenDiablerie && (
+              <button
+                type="button"
+                onClick={() => { onOpenDiablerie(); setMobileMenuOpen(false); }}
+                className="flex items-center gap-1 py-1.5 px-2.5 rounded bg-neutral-900 border border-neutral-700 text-neutral-300"
+              >
+                <Skull className="w-3.5 h-3.5 text-neutral-400" /> Diablerie
+              </button>
+            )}
             <button
               type="button"
               onClick={() => { onOpenResonance(); setMobileMenuOpen(false); }}
-              className="flex items-center gap-1.5 py-1.5 px-3 rounded bg-[#161622] text-rose-300"
+              className="flex items-center gap-1.5 py-1.5 px-2.5 rounded bg-[#161622] text-rose-300"
             >
               <Droplet className="w-3.5 h-3.5" /> Resonance
-            </button>
-            <button
-              type="button"
-              onClick={() => { onExportBackup(); setMobileMenuOpen(false); }}
-              className="flex items-center gap-1.5 py-1.5 px-3 rounded bg-[#161622]"
-            >
-              <Download className="w-3.5 h-3.5" /> Export Data
-            </button>
-            <button
-              type="button"
-              onClick={() => { onImportBackup(); setMobileMenuOpen(false); }}
-              className="flex items-center gap-1.5 py-1.5 px-3 rounded bg-[#161622]"
-            >
-              <Upload className="w-3.5 h-3.5" /> Import Data
             </button>
           </div>
         </div>
